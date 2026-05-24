@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌻 Anna's Garden (安娜的花园)
 
-## Getting Started
+> 一个治愈风格的儿童学习网站，围绕学期目标，陪伴孩子快乐成长
 
-First, run the development server:
+## ✨ 核心特性
 
+### 🎨 治愈物语风格
+- 吉卜力自然色调配色（米白基底、深棕文字、琥珀黄强调）
+- Glassmorphism 卡片效果（半透明 + 高斯模糊）
+- 水彩纹理背景 + 温暖的光晕效果
+- 大圆角设计，友好亲和
+
+### 👨‍👩‍👧 家长功能
+- **内容管理**：手动上传、AI 识别、外部资源接入
+- **内容审核**：审核 AI 生成和外部资源
+- **学期目标**：设定教学大纲，分解周目标
+- **学习计划**：每日/每周任务安排
+- **数据看板**：学习时长、正确率、知识点掌握
+
+### 👧 孩子体验
+- **温暖的学习界面**：治愈风格，大触摸区域（iPad 优化）
+- **趣味互动练习**：即时反馈，鼓励性动画
+- **我的花园**：可视化学习进度（日历热力图、知识树）
+- **成就徽章**：激励机制，收集徽章
+- **智能错题复习**：自动识别薄弱点，推荐练习
+
+### 📚 三大学科体系
+- **语文**：拼音、识字、朗读、理解
+- **数学**：计算、逻辑、解决问题
+- **英语**：歌谣、拼读、绘本、对话
+
+## 🛠️ 技术栈
+
+- **前端框架**：Next.js 14 (App Router) + TypeScript
+- **样式**：Tailwind CSS v4 + 治愈风格主题定制
+- **UI 组件**：shadcn/ui
+- **后端**：Supabase (PostgreSQL + Auth + Storage + Realtime)
+- **AI 能力**：OpenAI Vision API + GPT-4
+- **PWA**：next-pwa（离线缓存）
+
+## 🚀 快速开始
+
+### 安装依赖
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 配置环境变量
+复制 `.env.local.example` 到 `.env.local` 并填入配置：
+```bash
+cp .env.local.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 启动开发服务器
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+访问 http://localhost:3000
 
-## Learn More
+## 🎨 配色方案
 
-To learn more about Next.js, take a look at the following resources:
+| 用途 | 颜色 | OKLCH |
+|------|------|-------|
+| 背景色 | 吉卜力米白 | `oklch(0.97 0.02 85)` |
+| 文字主色 | 深棕 | `oklch(0.32 0.04 45)` |
+| 强调色 | 琥珀黄 | `oklch(0.75 0.15 70)` |
+| 辅助色 | 淡天蓝 | `oklch(0.65 0.08 200)` |
+| 辅助色 | 森绿 | `oklch(0.45 0.08 120)` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📱 设备适配
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### iPad 优化
+- 触摸热区：44px × 44px
+- 底部导航栏：64px
+- 基础字号：18px
 
-## Deploy on Vercel
+### 电脑适配
+- 紧凑布局
+- 键盘快捷键
+- 悬停效果
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🎯 待实现功能
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Supabase 数据库表创建和 RLS 配置
+- [ ] 用户认证流程
+- [ ] AI 图片识别功能
+- [ ] 外部数据源同步
+- [ ] PWA 离线功能
+
+---
+
+**让学习像花园一样美好 🌻**

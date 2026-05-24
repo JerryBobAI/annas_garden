@@ -49,73 +49,60 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* 吉卜力治愈风格配色 - Anna's Garden */
+
+  /* 背景色 - 米白系列 */
+  --background: oklch(0.97 0.02 85);      /* #FDF6E3 吉卜力米白 */
+  --foreground: oklch(0.32 0.04 45);      /* #3A2E2C 深棕 */
+  --card: oklch(0.99 0.01 85 0.75);       /* 半透明白 */
+  --card-foreground: oklch(0.32 0.04 45); /* 深棕 */
+  --popover: oklch(0.99 0.01 85 0.9);
+  --popover-foreground: oklch(0.32 0.04 45);
+
+  /* 主色调 - 深棕系列 */
+  --primary: oklch(0.38 0.05 45);         /* 深棕主色 */
+  --primary-foreground: oklch(0.98 0.01 85);
+
+  /* 次要色 - 米色系列 */
+  --secondary: oklch(0.94 0.02 75);       /* #F5EDE0 米色 */
+  --secondary-foreground: oklch(0.32 0.04 45);
+
+  /* 静默色 */
+  --muted: oklch(0.92 0.015 80);
+  --muted-foreground: oklch(0.48 0.03 55); /* #8B7355 墨绿偏棕 */
+
+  /* 强调色 - 琥珀黄 */
+  --accent: oklch(0.75 0.15 70);          /* #FFB300 琥珀黄 */
+  --accent-foreground: oklch(0.32 0.04 45);
+
+  /* 功能色 */
+  --destructive: oklch(0.65 0.15 25);     /* 柔红 */
+  --border: oklch(0.90 0.01 85 0.5);
+  --input: oklch(0.92 0.015 80);
+  --ring: oklch(0.75 0.15 70);
+
+  /* 图表色 */
+  --chart-1: oklch(0.75 0.15 70);         /* 琥珀黄 */
+  --chart-2: oklch(0.65 0.08 200);        /* 淡天蓝 */
+  --chart-3: oklch(0.45 0.08 120);        /* 森绿 */
+  --chart-4: oklch(0.55 0.12 45);         /* 浅棕 */
+  --chart-5: oklch(0.70 0.10 85);         /* 米黄 */
+
+  /* 圆角 - 更圆润 */
+  --radius: 1.5rem;
+
+  /* 侧边栏 */
+  --sidebar: oklch(0.96 0.02 85);
+  --sidebar-foreground: oklch(0.32 0.04 45);
+  --sidebar-primary: oklch(0.38 0.05 45);
+  --sidebar-primary-foreground: oklch(0.98 0.01 85);
+  --sidebar-accent: oklch(0.94 0.02 75);
+  --sidebar-accent-foreground: oklch(0.32 0.04 45);
+  --sidebar-border: oklch(0.90 0.01 85 0.5);
+  --sidebar-ring: oklch(0.75 0.15 70);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* 儿童学习网站不需要深色模式 */
 
 @layer base {
   * {
@@ -123,8 +110,448 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Open Sans', 'Noto Sans SC', sans-serif;
+    /* 吉卜力米白底色 + 细微对角线编织纹理 */
+    background-color: #FDF6E3;
+    background-image:
+      linear-gradient(45deg, rgba(210, 180, 140, 0.03) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(210, 180, 140, 0.03) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(210, 180, 140, 0.03) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(210, 180, 140, 0.03) 75%);
+    background-size: 20px 20px;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* ==========================================
+   治愈风格组件库
+   ========================================== */
+
+/* 卡片 - Glassmorphism 毛玻璃效果 */
+.card, .glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 10px rgba(0, 0, 0, 0.03);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 卡片 hover - 用 GPU 加速的 transform，避免重绘 box-shadow */
+.card:hover, .glass-card:hover {
+  transform: translate3d(0, -5px, 0);
+  will-change: transform;
+}
+
+/* 卡片变体 - 淡天蓝 */
+.card-alt-bg {
+  background-color: rgba(224, 242, 247, 0.75);
+}
+
+.card-darker-alt-bg {
+  background-color: rgba(206, 229, 234, 0.8);
+}
+
+/* 卡片内琥珀光晕效果 */
+.tech-glow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%;
+  height: 250%;
+  background-image: radial-gradient(circle, rgba(255, 179, 0, 0.15) 0%, rgba(255, 179, 0, 0.05) 40%, transparent 70%);
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+/* 卡片内容层（在光晕之上） */
+.content-z {
+  position: relative;
+  z-index: 1;
+}
+
+/* 超大响应式文字 */
+.ultra-large-text {
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* 大数字统计 */
+.large-stat-text {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 700;
+}
+
+/* 高亮文字 - 琥珀黄（无 text-shadow） */
+.highlight-text, .highlight-stat {
+  color: #FFB300;
+}
+
+/* 高亮图标 */
+.list-icon {
+  color: #FFB300;
+  margin-right: 0.5rem;
+}
+
+/* 水彩纹理背景（保留用于特殊场景） */
+.watercolor-bg {
+  background-color: #FDF6E3;
+  background-image:
+    linear-gradient(45deg, rgba(210, 180, 140, 0.03) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(210, 180, 140, 0.03) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(210, 180, 140, 0.03) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(210, 180, 140, 0.03) 75%),
+    radial-gradient(circle at 20% 30%, rgba(255, 179, 0, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(135, 206, 235, 0.06) 0%, transparent 50%);
+  background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px, 100% 100%, 100% 100%;
+}
+
+/* 琥珀色光晕效果 */
+.amber-glow {
+  box-shadow: 0 4px 16px rgba(255, 179, 0, 0.3);
+}
+
+/* 渐变按钮 */
+.btn-primary {
+  background: linear-gradient(135deg, oklch(0.75 0.15 70) 0%, oklch(0.70 0.16 70) 100%);
+  border-radius: 1rem;
+}
+
+.btn-primary:hover {
+  transform: translate3d(0, -2px, 0);
+}
+
+/* 大触摸区域（iPad 优化） */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* 圆润的容器 */
+.rounded-soft {
+  border-radius: 1.5rem;
+}
+
+/* 柔和的边框 */
+.border-soft {
+  border: 1px solid rgba(58, 46, 44, 0.08);
+}
+
+/* ==========================================
+   Tailwind 组件扩展类
+   ========================================== */
+@layer components {
+  /* 文字颜色 */
+  .text-primary-dark {
+    color: #3A2E2C;
+  }
+
+  .text-secondary-brown {
+    color: #5D4E4A;
+  }
+
+  .text-muted-brown {
+    color: #8B7355;
+  }
+
+  .text-amber-accent {
+    color: #FFB300;
+  }
+
+  .text-sky-accent {
+    color: oklch(0.65 0.08 200); /* #87CEEB */
+  }
+
+  .text-forest-accent {
+    color: oklch(0.45 0.08 120); /* #556B2F */
+  }
+
+  .text-success-green {
+    color: #7CB342;
+  }
+
+  /* 背景颜色 */
+  .bg-glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+  }
+
+  .bg-sky-alt {
+    background-color: rgba(224, 242, 247, 0.75);
+  }
+
+  .bg-sky-darker {
+    background-color: rgba(206, 229, 234, 0.8);
+  }
+
+  .bg-success-soft {
+    background-color: rgba(124, 179, 66, 0.2);
+  }
+
+  .bg-amber-soft {
+    background-color: rgba(255, 179, 0, 0.1);
+  }
+
+  .bg-amber-medium {
+    background-color: rgba(255, 179, 0, 0.15);
+  }
+
+  .bg-warning-soft {
+    background-color: rgba(255, 183, 77, 0.15);
+  }
+
+  .bg-error-soft {
+    background-color: rgba(229, 115, 115, 0.15);
+  }
+
+  .bg-progress-track {
+    background-color: rgba(58, 46, 44, 0.1);
+  }
+
+  .bg-progress-fill {
+    background: linear-gradient(90deg, oklch(0.75 0.15 70) 0%, oklch(0.70 0.16 70) 100%);
+  }
+
+  /* 边框 */
+  .border-glass {
+    border: 1px solid rgba(58, 46, 44, 0.08);
+  }
+
+  .border-active {
+    border: 2px solid rgba(255, 179, 0, 0.5);
+  }
+}
+
+/* ==========================================
+   动画系统 - 吉卜力治愈风格
+   ========================================== */
+
+/* 缓动曲线 */
+:root {
+  --ease-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 页面级入场动画（仅 opacity，不用 transform 以免破坏 fixed 定位） */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 元素从下方淡入 - GPU 加速 */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* 简单淡入 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 缩放淡入（emoji、徽章）- GPU 加速 */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale3d(0.6, 0.6, 1);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+/* 页面入场容器 */
+.animate-page-enter {
+  animation: pageEnter 0.3s var(--ease-soft) both;
+}
+
+/* 卡片入场 */
+.animate-card-enter {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: fadeSlideUp 0.3s var(--ease-soft) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
+/* 列表项入场 */
+.animate-list-enter {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: fadeSlideUp 0.25s var(--ease-soft) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
+/* 徽章/emoji 弹入 */
+.animate-badge-enter {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: scaleIn 0.3s var(--ease-spring) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
+/* View Transition API 页面过渡 */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: fadeOut 0.2s var(--ease-soft) both;
+}
+
+::view-transition-new(root) {
+  animation: fadeIn 0.25s var(--ease-soft) both;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ==========================================
+   交互反馈增强
+   ========================================== */
+
+/* 卡片按压反馈 - 纯 transform，无重绘 */
+.card:active:not(.card-no-press),
+.glass-card:active:not(.card-no-press) {
+  transform: translate3d(0, -2px, 0) scale3d(0.985, 0.985, 1);
+}
+
+/* 按钮按压反馈 */
+.btn-primary:active {
+  transform: translate3d(0, 0, 0) scale3d(0.97, 0.97, 1);
+}
+
+/* 底部导航过渡 */
+nav a {
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+nav a:active {
+  transform: scale3d(0.92, 0.92, 1);
+}
+
+/* 固定底部导航栏 - 覆盖 .card 的 position: relative */
+.fixed-nav {
+  position: fixed !important;
+}
+
+/* ==========================================
+   答题反馈动画（儿童友好）
+   ========================================== */
+
+/* 答对庆祝 - emoji 弹跳 */
+@keyframes celebrateBounce {
+  0% { transform: scale3d(0.3, 0.3, 1); opacity: 0; }
+  40% { transform: scale3d(1.15, 1.15, 1); opacity: 1; }
+  60% { transform: scale3d(0.9, 0.9, 1); }
+  80% { transform: scale3d(1.05, 1.05, 1); }
+  100% { transform: scale3d(1, 1, 1); }
+}
+
+/* 答错鼓励 - 柔和摇摆 */
+@keyframes gentleShake {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  20% { transform: translate3d(-3px, 0, 0) rotate(-2deg); }
+  40% { transform: translate3d(3px, 0, 0) rotate(2deg); }
+  60% { transform: translate3d(-2px, 0, 0) rotate(-1deg); }
+  80% { transform: translate3d(2px, 0, 0) rotate(1deg); }
+}
+
+/* 文字淡入上滑 */
+@keyframes textPopIn {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* 星星飘散（伪元素装饰） */
+@keyframes starFloat {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) scale3d(1, 1, 1); }
+  100% { opacity: 0; transform: translate3d(var(--tx, 20px), var(--ty, -30px), 0) scale3d(0.5, 0.5, 1); }
+}
+
+@keyframes hintPulse {
+  0%, 100% { transform: scale3d(1, 1, 1); }
+  50% { transform: scale3d(1.08, 1.08, 1); }
+}
+
+.animate-hint-pulse {
+  animation: hintPulse 1s ease-in-out infinite;
+}
+
+.animate-celebrate {
+  animation: celebrateBounce 0.6s var(--ease-spring) both;
+}
+
+.animate-encourage {
+  animation: gentleShake 0.5s ease both;
+}
+
+.animate-text-pop {
+  opacity: 0;
+  animation: textPopIn 0.4s var(--ease-soft) both;
+  animation-delay: 0.15s;
+}
+
+.animate-text-pop-delay {
+  opacity: 0;
+  animation: textPopIn 0.4s var(--ease-soft) both;
+  animation-delay: 0.3s;
+}
+
+/* 选项按钮正确/错误状态 */
+.option-correct {
+  background-color: rgba(124, 179, 66, 0.2) !important;
+  border-color: rgba(124, 179, 66, 0.6) !important;
+  color: #558B2F !important;
+}
+
+.option-wrong {
+  background-color: rgba(229, 115, 115, 0.15) !important;
+  border-color: rgba(229, 115, 115, 0.5) !important;
+  color: #C62828 !important;
+}
+
+.option-correct-text {
+  background-color: rgba(124, 179, 66, 0.15) !important;
+  border-color: rgba(124, 179, 66, 0.4) !important;
+  color: #558B2F !important;
+}
+
+/* 答对时的星星装饰 */
+.celebrate-stars::before,
+.celebrate-stars::after {
+  content: '⭐';
+  position: absolute;
+  font-size: 1.5rem;
+  animation: starFloat 0.8s ease-out both;
+  pointer-events: none;
+}
+.celebrate-stars::before {
+  top: -10px; left: 30%;
+  --tx: -25px; --ty: -40px;
+  animation-delay: 0.2s;
+}
+.celebrate-stars::after {
+  top: -10px; right: 30%;
+  --tx: 25px; --ty: -35px;
+  animation-delay: 0.35s;
 }

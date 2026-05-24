@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // 禁用严格模式以减少警告
+  reactStrictMode: false,
 };
 
 export default nextConfig;
