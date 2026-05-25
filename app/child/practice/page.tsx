@@ -3,8 +3,9 @@
 import React, { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { StickyHeader } from '@/components/shared/sticky-header'
 import { createClient } from '@/lib/supabase/client'
-import { playCorrect, playWrong, playNavigate, playTap } from '@/lib/sounds'
+import { playCorrect, playWrong, playTap } from '@/lib/sounds'
 
 interface Material {
   id: string
@@ -56,18 +57,14 @@ function PracticeContent() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isCorrect, setIsCorrect] = useState(false)
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now())
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0)
 
   // Results tracking
   const [results, setResults] = useState<{ exerciseId: string; correct: boolean; duration: number }[]>([])
   const [correctCount, setCorrectCount] = useState(0)
   const [wrongCount, setWrongCount] = useState(0)
 
-  useEffect(() => {
-    fetchExercises()
-  }, [materialId])
-
-  async function fetchExercises() {
+  const fetchExercises = useCallback(async () => {
     setPageState('loading')
     try {
       let targetMaterialId = materialId
@@ -119,9 +116,13 @@ function PracticeContent() {
       console.error('Error fetching exercises:', error)
       setPageState('practice')
     }
-  }
+  }, [materialId, supabase])
 
-  async function saveAnswer(exercise: Exercise, correct: boolean, duration: number) {
+  useEffect(() => {
+    void Promise.resolve().then(fetchExercises)
+  }, [fetchExercises])
+
+  const saveAnswer = useCallback(async (exercise: Exercise, correct: boolean, duration: number) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -156,7 +157,7 @@ function PracticeContent() {
     } catch (error) {
       console.error('Error saving answer:', error)
     }
-  }
+  }, [material, supabase])
 
   const handleAnswer = useCallback((answer: string) => {
     if (!exercises.length || selectedAnswer) return
@@ -170,7 +171,11 @@ function PracticeContent() {
     setQuestionStartTime(Date.now())
     setPageState('feedback')
 
-    correct ? playCorrect() : playWrong()
+    if (correct) {
+      playCorrect()
+    } else {
+      playWrong()
+    }
 
     if (correct) {
       setCorrectCount(prev => prev + 1)
@@ -181,8 +186,8 @@ function PracticeContent() {
     setResults(prev => [...prev, { exerciseId: exercise.id, correct, duration }])
 
     // Background write to Supabase (non-blocking)
-    saveAnswer(exercise, correct, duration)
-  }, [exercises, currentIndex, selectedAnswer, questionStartTime, material, supabase])
+    void saveAnswer(exercise, correct, duration)
+  }, [exercises, currentIndex, selectedAnswer, questionStartTime, saveAnswer])
 
   const handleNext = useCallback(() => {
     if (currentIndex < exercises.length - 1) {
@@ -313,24 +318,12 @@ function PracticeContent() {
 
   return (
     <main className="min-h-screen watercolor-bg pb-24">
-      {/* 顶部导航 */}
-      <div className="container mx-auto px-4 pt-8 pb-6">
-        <div className="card rounded-soft p-4 animate-card-enter">
-          <div className="flex items-center justify-between content-z">
-            <Link href="/child" className="text-2xl touch-target" style={{ color: '#3A2E2C' }}>←</Link>
-            <div className="text-center">
-              <div className="text-xs" style={{ color: '#8B7355' }}>
-                {subjectNames[material?.subject || ''] || '练习'}
-              </div>
-              <div className="text-lg font-semibold" style={{ color: '#3A2E2C' }}>
-                {material?.title || '练习'}
-              </div>
-            </div>
-            <div className="text-xl font-bold" style={{ color: '#FFB300' }}>
-              {currentIndex + 1}/{exercises.length}
-            </div>
-          </div>
-        </div>
+      <StickyHeader
+        subtitle={subjectNames[material?.subject || ''] || '练习'}
+        title={material?.title || '练习'}
+        right={<span className="text-xl font-bold" style={{ color: '#FFB300' }}>{currentIndex + 1}/{exercises.length}</span>}
+      />
+      <div className="container mx-auto px-4">
 
         {/* 进度条 */}
         <div className="card rounded-soft p-3 mt-4">
@@ -347,7 +340,7 @@ function PracticeContent() {
       </div>
 
       {/* 题目卡片 */}
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 mt-4">
         <div className="card rounded-soft p-8 mb-8 animate-card-enter" style={{ '--stagger': '100ms' } as React.CSSProperties}>
           {/* 难度标识 */}
           <div className="flex items-center justify-center gap-2 mb-6">
@@ -436,29 +429,7 @@ function PracticeContent() {
         </div>
       </div>
 
-      {/* 底部导航栏 */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-soft" style={{ position: 'fixed', height: '64px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 50, borderTop: '1px solid rgba(58,46,44,0.08)' }}>
-        <div className="container mx-auto px-4 h-full">
-          <div className="flex items-center justify-around h-full">
-            <Link href="/child" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🏠</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>首页</div>
-            </Link>
-            <Link href="/child/practice" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">📝</div>
-              <div className="text-xs" style={{ color: '#3A2E2C' }}>练习</div>
-            </Link>
-            <Link href="/child/garden" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🌻</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>花园</div>
-            </Link>
-            <Link href="/child/review" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🔄</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>复习</div>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* 底部导航栏由 layout.tsx BottomNav 统一提供 */}
     </main>
   )
 }

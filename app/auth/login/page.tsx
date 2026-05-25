@@ -27,13 +27,29 @@ export default function LoginPage() {
         if (error) throw error
         setError('注册成功！请查看邮箱确认链接。')
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        router.push('/')
-        router.refresh()
+
+        const userId = data.user?.id
+        const { data: profile } = userId
+          ? await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single()
+          : { data: null }
+
+        const defaultPath = profile?.role === 'parent' ? '/parent' : '/child'
+        const redirectTo = new URLSearchParams(window.location.search).get('redirectTo')
+        const targetPath = redirectTo?.startsWith('/') && !redirectTo.startsWith('//')
+          ? redirectTo
+          : defaultPath
+
+        router.replace(targetPath)
       }
-    } catch (err: any) {
-      setError(err.message || '操作失败')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '操作失败'
+      setError(message)
     } finally {
       setLoading(false)
     }

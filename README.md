@@ -38,7 +38,7 @@
 - **前端框架**：Next.js 16 (App Router) + React 19 + TypeScript
 - **样式**：Tailwind CSS v4 + shadcn/ui
 - **后端**：Supabase (PostgreSQL + Auth + Storage)
-- **AI**：Vercel AI SDK + OpenAI (GPT-4o + Whisper + TTS)
+- **AI**：Vercel AI SDK + 智谱 GLM-4（默认） / OpenAI GPT-4o（可切换）
 - **PWA**：next-pwa（离线可选）
 
 ## 🚀 快速开始
@@ -55,7 +55,9 @@ cp .env.local.example .env.local
 
 需要配置：
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase
-- `OPENAI_API_KEY` — OpenAI (GPT-4o + Whisper + TTS)
+- `GLM_API_KEY` / `GLM_BASE_URL` — 智谱 GLM（默认 AI 提供商，open.bigmodel.cn）
+- `OPENAI_API_KEY` — OpenAI（可选，Phase 2 语音用）
+- `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` — 自动化测试账号（可选）
 
 ### 启动开发服务器
 ```bash
@@ -68,9 +70,9 @@ npm run dev
 
 | Phase | 内容 | 状态 |
 |-------|------|------|
-| v1.0 | 基础框架 + 数据层 + 做题器核心功能 | ✅ 完成 (70%) |
-| Phase 1 | AI 对话核心 + 孩子端重写 | ← 下一步 |
-| Phase 2 | 语音交互 + 基础花园可视化 | 待开始 |
+| v1.0 | 基础框架 + 数据层 + 做题器核心功能 | ✅ 完成 |
+| Phase 1 | AI 对话核心 + 孩子端重写 + 测试 | ✅ 完成 |
+| Phase 2 | 语音交互 + 基础花园可视化 | ← 下一步 |
 | Phase 3 | 创造模式（故事/数学/英语） | 待开始 |
 | Phase 4 | 智能课程引擎 + 家长 AI 洞察 | 待开始 |
 
@@ -80,10 +82,10 @@ npm run dev
 |------|------|
 | `spec/SPEC.md` | 产品规格说明书 v2.0 |
 | `spec/PLAN.md` | 开发计划 v2.0 |
-| `spec/PHASE1-SPEC.md` | Phase 1 实施规格 — AI 对话核心 + 孩子端重写 |
-| `spec/PHASE2-SPEC.md` | Phase 2 实施规格 — 语音交互 + 基础花园 |
-| `spec/PHASE3-SPEC.md` | Phase 3 实施规格 — 创造模式 |
-| `spec/PHASE4-SPEC.md` | Phase 4 实施规格 — 智能课程引擎 + 家长洞察 |
+| `spec/PHASE1.md` | Phase 1 — AI 对话核心 + 孩子端重写 |
+| `spec/PHASE2.md` | Phase 2 — 语音交互 + 基础花园 |
+| `spec/PHASE3.md` | Phase 3 — 创造模式 |
+| `spec/PHASE4.md` | Phase 4 — 智能课程引擎 + 家长洞察 |
 | `doc/VISION.md` | 产品愿景 |
 | `doc/ROADMAP.md` | 技术路线图 |
 | `doc/ISSUES.md` | 问题清单 + 决策记录 |

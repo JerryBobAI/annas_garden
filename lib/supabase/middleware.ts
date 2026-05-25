@@ -34,13 +34,22 @@ export async function updateSession(request: NextRequest) {
   if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
+    url.searchParams.set('redirectTo', `${request.nextUrl.pathname}${request.nextUrl.search}`)
     return NextResponse.redirect(url)
   }
 
   // 已登录且访问登录页 → 跳转首页
   if (user && request.nextUrl.pathname === '/auth/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    const redirectTo = request.nextUrl.searchParams.get('redirectTo')
+    if (redirectTo?.startsWith('/') && !redirectTo.startsWith('//')) {
+      const target = new URL(redirectTo, request.nextUrl.origin)
+      url.pathname = target.pathname
+      url.search = target.search
+    } else {
+      url.pathname = '/'
+      url.search = ''
+    }
     return NextResponse.redirect(url)
   }
 

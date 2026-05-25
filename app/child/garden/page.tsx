@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import Link from 'next/link'
+import React, { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { playNavigate } from '@/lib/sounds'
+import { StickyHeader } from '@/components/shared/sticky-header'
 
 interface SubjectMastery {
   subject: string
@@ -34,11 +33,7 @@ export default function GardenPage() {
   const [totalExercises, setTotalExercises] = useState(0)
   const [currentMonth, setCurrentMonth] = useState('')
 
-  useEffect(() => {
-    fetchGardenData()
-  }, [])
-
-  async function fetchGardenData() {
+  const fetchGardenData = useCallback(async () => {
     setLoading(true)
     try {
       const now = new Date()
@@ -70,11 +65,11 @@ export default function GardenPage() {
       setTotalExercises(totalExCount)
 
       // Calculate streak
+      let streak = 0
       if (allRecords && allRecords.length > 0) {
         const dates = [...new Set(
           allRecords.map(r => new Date(r.created_at).toDateString())
         )]
-        let streak = 0
         const today = new Date()
         today.setHours(0, 0, 0, 0)
         for (let i = 0; i < 365; i++) {
@@ -167,11 +162,11 @@ export default function GardenPage() {
 
       const badgeList: Achievement[] = [
         { id: 'first_learn', icon: '🌟', name: '首次学习', unlocked: totalExCount > 0 },
-        { id: 'streak_3', icon: '🔥', name: '连续3天', unlocked: streakDays >= 3 },
+        { id: 'streak_3', icon: '🔥', name: '连续3天', unlocked: streak >= 3 },
         { id: 'perfect', icon: '💯', name: '满分练习', unlocked: maxConsecutive >= 5 },
         { id: 'unit_done', icon: '📚', name: '完成单元', unlocked: masteries.some(m => m.materials.some(mat => mat.status === 'mastered')) },
         { id: 'expert', icon: '🎯', name: '达标高手', unlocked: totalCorrect >= 50 },
-        { id: 'streak_7', icon: '🌻', name: '连续7天', unlocked: streakDays >= 7 },
+        { id: 'streak_7', icon: '🌻', name: '连续7天', unlocked: streak >= 7 },
         { id: 'ex100', icon: '🎨', name: '百题斩', unlocked: totalCorrect >= 100 },
         { id: 'master10', icon: '🏆', name: '错题克星', unlocked: totalMastered >= 10 },
         { id: 'master', icon: '🎪', name: '全科学霸', unlocked: masteries.length >= 3 && masteries.every(m => m.mastery >= 60) }
@@ -182,7 +177,11 @@ export default function GardenPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchGardenData)
+  }, [fetchGardenData])
 
   const statusIcons: Record<string, { icon: string; bgColor: string }> = {
     mastered: { icon: '✓', bgColor: 'rgba(124, 179, 66, 0.2)' },
@@ -203,17 +202,11 @@ export default function GardenPage() {
 
   return (
     <main className="min-h-screen watercolor-bg pb-24">
-      {/* 顶部导航 */}
-      <div className="card rounded-soft p-4 mb-6">
-        <div className="flex items-center justify-between content-z">
-          <Link href="/child" className="text-2xl touch-target" style={{ color: '#3A2E2C' }}>←</Link>
-          <div className="text-center">
-            <div className="text-xs" style={{ color: '#8B7355' }}>成长记录</div>
-            <div className="text-lg font-semibold" style={{ color: '#3A2E2C' }}>🏡 我的花园</div>
-          </div>
-          <div className="text-xl font-bold">🌻</div>
-        </div>
-      </div>
+      <StickyHeader
+        subtitle="成长记录"
+        title="🏡 我的花园"
+        right={<span className="text-xl">🌻</span>}
+      />
 
       {/* 花园主区域 */}
       <div className="container mx-auto px-4 mb-8">
@@ -331,29 +324,7 @@ export default function GardenPage() {
         </div>
       </div>
 
-      {/* 底部导航栏 */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-soft" style={{ position: 'fixed', height: '64px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 50, borderTop: '1px solid rgba(58,46,44,0.08)' }}>
-        <div className="container mx-auto px-4 h-full">
-          <div className="flex items-center justify-around h-full">
-            <Link href="/child" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🏠</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>首页</div>
-            </Link>
-            <Link href="/child/practice" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">📝</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>练习</div>
-            </Link>
-            <Link href="/child/garden" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🌻</div>
-              <div className="text-xs" style={{ color: '#3A2E2C' }}>花园</div>
-            </Link>
-            <Link href="/child/review" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🔄</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>复习</div>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* 底部导航栏由 layout.tsx BottomNav 统一提供 */}
     </main>
   )
 }

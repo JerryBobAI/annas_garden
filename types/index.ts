@@ -146,3 +146,142 @@ export interface StudyPlan {
   end_date: string
   status: 'active' | 'completed' | 'paused'
 }
+
+// ============================================
+// Phase 1: AI 对话系统类型
+// ============================================
+
+// 学习模式
+export type LearningMode = 'explore' | 'quest' | 'create'
+
+// 消息角色
+export type MessageRole = 'user' | 'assistant' | 'system'
+
+// 精灵情绪
+export type FairyEmotion = 'happy' | 'thinking' | 'surprised' | 'cheering'
+
+// 植物类型（Phase 2 使用，类型先定义）
+export type PlantType = 'seed' | 'sprout' | 'growing' | 'blooming' | 'withered'
+
+// 花园事件
+export type GardenEvent = 'seed_planted' | 'sprout' | 'bloom' | null
+
+// AI 结构化输出
+export interface AIStructuredOutput {
+  emotion: FairyEmotion
+  options?: string[]                    // 2-3 个选项按钮文字
+  knowledge_tags?: string[]             // 关联知识点
+  difficulty?: number                   // 1-5
+  garden_event?: GardenEvent
+  next_mode?: LearningMode | null       // 建议切换的模式
+}
+
+// AI 对话会话
+export interface Conversation {
+  id: string
+  child_id: string
+  mode: LearningMode
+  subject?: Subject
+  title?: string
+  summary?: string
+  message_count: number
+  metadata: {
+    garden_events: string[]
+    knowledge_tags: string[]
+    difficulty_avg: number
+  }
+  started_at: string
+  ended_at?: string
+  created_at: string
+}
+
+// 对话消息
+export interface Message {
+  id: string
+  conversation_id: string
+  role: MessageRole
+  content: string
+  structured_output?: AIStructuredOutput
+  voice_url?: string
+  token_count: number
+  created_at: string
+}
+
+// 好奇心种子
+export interface CuriositySeed {
+  id: string
+  child_id: string
+  question: string
+  subject?: Subject
+  knowledge_tags: string[]
+  explored: boolean
+  conversation_id?: string
+  created_at: string
+}
+
+// 认知档案
+export interface CognitiveProfile {
+  id: string
+  child_id: string
+  preferred_mode: LearningMode
+  attention_span_avg: number            // 秒
+  vocabulary_level: number              // 1-10
+  interests: string[]
+  total_conversations: number
+  total_messages: number
+  updated_at: string
+}
+
+// 知识掌握
+export interface KnowledgeMastery {
+  id: string
+  child_id: string
+  subject: Subject
+  knowledge_point: string
+  mastery_level: number                 // 0-100
+  practice_count: number
+  last_practiced_at?: string
+  source_conversations: string[]
+  created_at: string
+  updated_at: string
+}
+
+// 花园植物（Phase 2 使用，类型先定义）
+export interface GardenPlant {
+  id: string
+  child_id: string
+  name?: string
+  plant_type: PlantType
+  subject?: Subject
+  knowledge_tags: string[]
+  source_conversation_id?: string
+  growth_stage: number                  // 0-100
+  last_watered_at: string
+  position_x: number
+  position_y: number
+  created_at: string
+}
+
+// API 请求/响应类型
+export interface ChatRequest {
+  conversation_id?: string              // 可选，续对话时传入
+  message: string                       // 用户输入文字
+  mode: LearningMode                    // 当前学习模式
+  subject?: Subject                     // 可选，任务模式时指定学科
+}
+
+export interface ChatResponse {
+  conversation_id: string
+  message: {
+    id: string
+    content: string
+    structured_output: AIStructuredOutput
+  }
+}
+
+// Onboarding 状态
+export interface OnboardingState {
+  step: 'welcome' | 'name' | 'seed' | 'mode' | 'first_chat' | 'done'
+  display_name?: string
+  avatar_url?: string
+}

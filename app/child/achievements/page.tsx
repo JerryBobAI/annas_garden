@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
-import Link from 'next/link'
+import React, { useEffect, useState, useCallback } from 'react'
+import { StickyHeader } from '@/components/shared/sticky-header'
 import { createClient } from '@/lib/supabase/client'
-import { playNavigate } from '@/lib/sounds'
 
 interface Achievement {
   id: string
@@ -21,11 +20,7 @@ export default function AchievementsPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [unlockedCount, setUnlockedCount] = useState(0)
 
-  useEffect(() => {
-    fetchAchievements()
-  }, [])
-
-  async function fetchAchievements() {
+  const fetchAchievements = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -135,7 +130,11 @@ export default function AchievementsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchAchievements)
+  }, [fetchAchievements])
 
   if (loading) {
     return (
@@ -150,21 +149,11 @@ export default function AchievementsPage() {
 
   return (
     <main className="min-h-screen watercolor-bg pb-24">
-      {/* 顶部导航 */}
-      <div className="container mx-auto px-4 pt-4 pb-2">
-        <div className="card rounded-soft p-3">
-          <div className="flex items-center justify-between">
-            <Link href="/child" className="text-xl touch-target" style={{ color: '#3A2E2C' }}>←</Link>
-            <div className="text-center">
-              <div className="text-xs" style={{ color: '#8B7355' }}>成就徽章</div>
-              <div className="text-base font-semibold" style={{ color: '#3A2E2C' }}>🏆 我的成就</div>
-            </div>
-            <div className="text-base font-bold" style={{ color: '#FFB300' }}>
-              {unlockedCount}/{achievements.length}
-            </div>
-          </div>
-        </div>
-      </div>
+      <StickyHeader
+        subtitle="成就徽章"
+        title="🏆 我的成就"
+        right={<span className="text-base font-bold" style={{ color: '#FFB300' }}>{unlockedCount}/{achievements.length}</span>}
+      />
 
       {/* 总进度 */}
       <div className="container mx-auto px-4 mb-6">
@@ -231,29 +220,7 @@ export default function AchievementsPage() {
         </div>
       </div>
 
-      {/* 底部导航栏 */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-soft" style={{ position: 'fixed', height: '64px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 50, borderTop: '1px solid rgba(58,46,44,0.08)' }}>
-        <div className="container mx-auto px-4 h-full">
-          <div className="flex items-center justify-around h-full">
-            <Link href="/child" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🏠</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>首页</div>
-            </Link>
-            <Link href="/child/practice" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">📝</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>练习</div>
-            </Link>
-            <Link href="/child/garden" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🌻</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>花园</div>
-            </Link>
-            <Link href="/child/review" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🔄</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>复习</div>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* 底部导航栏由 layout.tsx BottomNav 统一提供 */}
     </main>
   )
 }

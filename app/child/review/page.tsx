@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
+import { StickyHeader } from '@/components/shared/sticky-header'
 import { createClient } from '@/lib/supabase/client'
 import { playSuccess, playNavigate } from '@/lib/sounds'
 
@@ -52,11 +52,7 @@ export default function ReviewPage() {
   const [selectedSubject, setSelectedSubject] = useState<'all' | 'math' | 'chinese' | 'english'>('all')
   const [masteringIds, setMasteringIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    fetchWrongAnswers()
-  }, [])
-
-  async function fetchWrongAnswers() {
+  const fetchWrongAnswers = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -99,7 +95,11 @@ export default function ReviewPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchWrongAnswers)
+  }, [fetchWrongAnswers])
 
   const handleMastered = useCallback(async (wrongAnswerId: string) => {
     setMasteringIds(prev => new Set(prev).add(wrongAnswerId))
@@ -193,19 +193,11 @@ export default function ReviewPage() {
 
   return (
     <main className="min-h-screen watercolor-bg pb-24">
-      {/* 顶部导航 */}
-      <div className="card rounded-soft p-4 mb-6">
-        <div className="flex items-center justify-between content-z">
-          <Link href="/child" className="text-2xl touch-target" style={{ color: '#3A2E2C' }}>←</Link>
-          <div className="text-center">
-            <div className="text-xs" style={{ color: '#8B7355' }}>错题巩固</div>
-            <div className="text-lg font-semibold" style={{ color: '#3A2E2C' }}>🔄 错题复习</div>
-          </div>
-          <div className="text-xl font-bold" style={{ color: '#FFB300' }}>
-            {filteredAnswers.length}
-          </div>
-        </div>
-      </div>
+      <StickyHeader
+        subtitle="错题巩固"
+        title="🔄 错题复习"
+        right={<span className="text-xl font-bold" style={{ color: '#FFB300' }}>{filteredAnswers.length}</span>}
+      />
 
       {/* 学科筛选 */}
       <div className="container mx-auto px-4 mb-6">
@@ -348,29 +340,7 @@ export default function ReviewPage() {
         )}
       </div>
 
-      {/* 底部导航栏 */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-soft" style={{ position: 'fixed', height: '64px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 50, borderTop: '1px solid rgba(58,46,44,0.08)' }}>
-        <div className="container mx-auto px-4 h-full">
-          <div className="flex items-center justify-around h-full">
-            <Link href="/child" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🏠</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>首页</div>
-            </Link>
-            <Link href="/child/practice" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">📝</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>练习</div>
-            </Link>
-            <Link href="/child/garden" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🌻</div>
-              <div className="text-xs" style={{ color: '#8B7355' }}>花园</div>
-            </Link>
-            <Link href="/child/review" onClick={() => playNavigate()} className="flex flex-col items-center justify-center flex-1 touch-target">
-              <div className="text-2xl mb-1">🔄</div>
-              <div className="text-xs" style={{ color: '#3A2E2C' }}>复习</div>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* 底部导航栏由 layout.tsx BottomNav 统一提供 */}
     </main>
   )
 }
