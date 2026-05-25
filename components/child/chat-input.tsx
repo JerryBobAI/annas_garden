@@ -1,13 +1,16 @@
 'use client'
 
-import { FormEvent, useRef, useEffect } from 'react'
+import { FormEvent, useRef, useEffect, useState } from 'react'
 import { playTap } from '@/lib/sounds'
+import VoiceButton from './voice-button'
 
 interface ChatInputProps {
   value: string
   onChange: (v: string) => void
   onSubmit: (e: FormEvent) => void
+  onVoiceRecording?: (blob: Blob) => void
   isLoading: boolean
+  voiceEnabled?: boolean
 }
 
 /**
@@ -18,9 +21,12 @@ export default function ChatInput({
   value,
   onChange,
   onSubmit,
+  onVoiceRecording,
   isLoading,
+  voiceEnabled = true,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [showVoice, setShowVoice] = useState(false)
 
   // 自适应高度
   useEffect(() => {
@@ -51,32 +57,61 @@ export default function ChatInput({
         WebkitBackdropFilter: 'blur(12px)',
       }}
     >
-      <form onSubmit={onSubmit} className="flex items-end gap-2">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="和精灵说说吧..."
-          rows={1}
-          disabled={isLoading}
-          className="flex-1 resize-none rounded-2xl px-4 py-3 text-sm border-2 focus:outline-none focus:border-amber-400 disabled:opacity-50 transition-colors"
-          style={{
-            borderColor: 'rgba(58,46,44,0.12)',
-            backgroundColor: 'rgba(253,246,227,0.6)',
-            color: '#3A2E2C',
-            maxHeight: '120px',
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!value.trim() || isLoading}
-          onClick={() => playTap()}
-          className="btn-primary w-12 h-12 rounded-full flex items-center justify-center text-white text-lg touch-target disabled:opacity-40 flex-shrink-0"
-        >
-          {isLoading ? '⏳' : '📨'}
-        </button>
-      </form>
+      {/* 录音模式 */}
+      {showVoice && voiceEnabled && onVoiceRecording ? (
+        <div className="flex items-center justify-center gap-4 py-2">
+          <button
+            onClick={() => setShowVoice(false)}
+            className="text-sm text-muted-brown touch-target px-3 py-2"
+          >
+            ⌨️ 打字
+          </button>
+          <VoiceButton
+            onRecordingComplete={onVoiceRecording}
+            disabled={isLoading}
+          />
+          <div className="w-16" /> {/* 占位平衡布局 */}
+        </div>
+      ) : (
+        <form onSubmit={onSubmit} className="flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="和精灵说说吧..."
+            rows={1}
+            disabled={isLoading}
+            className="flex-1 resize-none rounded-2xl px-4 py-3 text-sm border-2 focus:outline-none focus:border-amber-400 disabled:opacity-50 transition-colors"
+            style={{
+              borderColor: 'rgba(58,46,44,0.12)',
+              backgroundColor: 'rgba(253,246,227,0.6)',
+              color: '#3A2E2C',
+              maxHeight: '120px',
+            }}
+          />
+          {/* 语音按钮 */}
+          {voiceEnabled && onVoiceRecording && (
+            <button
+              type="button"
+              onClick={() => { playTap(); setShowVoice(true) }}
+              className="w-12 h-12 rounded-full flex items-center justify-center text-lg touch-target flex-shrink-0"
+              style={{ backgroundColor: 'rgba(255,179,0,0.15)' }}
+              aria-label="切换语音"
+            >
+              🎙️
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={!value.trim() || isLoading}
+            onClick={() => playTap()}
+            className="btn-primary w-12 h-12 rounded-full flex items-center justify-center text-white text-lg touch-target disabled:opacity-40 flex-shrink-0"
+          >
+            {isLoading ? '⏳' : '📨'}
+          </button>
+        </form>
+      )}
     </div>
   )
 }

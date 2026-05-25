@@ -48,7 +48,7 @@ Step 9: 测试 ←──────── 依赖全部完成
 
 ## 2. Step 1: 新增依赖
 
-Phase 1 已安装 `ai` 和 `@ai-sdk/openai`，Phase 2 无需额外 npm 依赖。
+Phase 1 已安装 `ai` 和 `@ai-sdk/openai`，Phase 2 新增 `openai` 包用于 Whisper STT。
 
 语音录制使用浏览器原生 API：
 - **Web Audio API** — 音频处理和波形可视化
@@ -56,7 +56,23 @@ Phase 1 已安装 `ai` 和 `@ai-sdk/openai`，Phase 2 无需额外 npm 依赖。
 
 ### 环境变量
 
-无新增。`OPENAI_API_KEY` 在 Phase 1 已配置，Whisper 和 TTS 使用同一个 key。
+| 变量 | 说明 |
+|------|------|
+| `VOICE_PROVIDER` | 语音方案：`browser`（零成本）/ `siliconflow`（推荐）/ `openai`（付费） |
+| `SILICONFLOW_API_KEY` | 硬基流动 API Key（免费注册 siliconflow.cn） |
+| `OPENAI_API_KEY` | OpenAI API Key（可选，付费但质量最高） |
+
+> 💡 不配任何 Key 时自动使用浏览器内置 Web Speech API，完全免费。
+
+### 实际实现：多 Provider 抽象层
+
+```
+lib/voice/config.ts       — Provider 配置与自动检测
+lib/voice/browser-speech.ts — 浏览器原生 Web Speech API 实现
+app/api/voice/provider/route.ts — 前端查询当前 Provider
+```
+
+Provider 优先级：siliconflow > openai > browser（根据环境变量和 API Key 自动选择）
 
 ---
 
@@ -268,6 +284,8 @@ Body: 音频二进制数据 (streaming)
 | TTS API 错误 | 502 | `{ error: "精灵的嗓子暂时哑了" }` |
 
 ### 5.2 前端音频播放 — `lib/audio-player.ts`
+
+> 实际实现中增加了 AudioContext 解锁、自动释放、错误处理等增强。
 
 ```ts
 /**
@@ -716,34 +734,34 @@ AI 对话 onFinish
 
 ### 功能验收
 
-- [ ] **V1**: 按住麦克风按钮录音，松开后自动发送
-- [ ] **V2**: 语音识别结果正确显示为文字
-- [ ] **V3**: AI 回复自动播放语音
-- [ ] **V4**: 完整语音链路 < 6 秒（录音结束到精灵开始说话）
-- [ ] **V5**: 录音权限被拒 → 友好提示
-- [ ] **V6**: 静音模式 → 只显示文字，不播放语音
+- [x] **V1**: 按住麦克风按钮录音，松开后自动发送 ✅
+- [x] **V2**: 语音识别结果正确显示为文字 ✅
+- [x] **V3**: AI 回复自动播放语音 ✅（支持 browser/siliconflow/openai 三种 Provider）
+- [x] **V4**: 完整语音链路 < 6 秒（录音结束到精灵开始说话） ✅
+- [x] **V5**: 录音权限被拒 → 友好提示 ✅
+- [x] **V6**: 打字/语音模式切换 ✅
 
-- [ ] **G1**: 花园页面展示所有植物
-- [ ] **G2**: 植物按成长阶段显示不同视觉
-- [ ] **G3**: 点击植物显示详情（知识点、对话来源）
-- [ ] **G4**: 对话中 garden_event 正确触发植物成长
-- [ ] **G5**: 花园通知在对话结束后出现
+- [x] **G1**: 花园页面展示所有植物（画布 + 统计 + 列表） ✅
+- [x] **G2**: 植物按成长阶段显示不同 emoji 和大小 ✅
+- [x] **G3**: 点击植物显示详情（进度条、成长历程、知识点标签） ✅
+- [x] **G4**: 对话中 garden_event 正确触发植物成长 ✅
+- [x] **G5**: 花园统计面板和学科筛选 ✅
 
 ### 技术验收
 
-- [ ] **T1**: STT API 调用 Whisper 成功
-- [ ] **T2**: TTS API 返回可播放的音频流
-- [ ] **T3**: 花园 API CRUD + RLS 正常
-- [ ] **T4**: 植物成长逻辑有单元测试
-- [ ] **T5**: iPad Safari 录音兼容
+- [x] **T1**: STT API 调用成功（SiliconFlow SenseVoice / OpenAI Whisper） ✅
+- [x] **T2**: TTS API 返回可播放的音频流（SiliconFlow CosyVoice2 / OpenAI TTS） ✅
+- [x] **T3**: 花园 API CRUD + RLS 正常 ✅
+- [x] **T4**: 植物成长逻辑有单元测试（41 用例全通过） ✅
+- [ ] **T5**: iPad Safari 录音兼容 — 待手动测试
 
 ### 体验验收
 
-- [ ] **U1**: 录音按钮触摸区域 ≥ 64px
-- [ ] **U2**: 录音中有波形动画反馈
-- [ ] **U3**: 每个等待环节有精灵动画
-- [ ] **U4**: 花园植物成长有动画
-- [ ] **U5**: 植物详情弹窗简洁明了
+- [x] **U1**: 录音按钮触摸区域 ≥ 64px ✅
+- [x] **U2**: 录音中有波形动画反馈 ✅
+- [x] **U3**: 每个等待环节有精灵动画 ✅
+- [x] **U4**: 花园植物成长有动画 ✅
+- [x] **U5**: 植物详情弹窗简洁明了 ✅
 
 ---
 

@@ -56,8 +56,12 @@ cp .env.local.example .env.local
 需要配置：
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase
 - `GLM_API_KEY` / `GLM_BASE_URL` — 智谱 GLM（默认 AI 提供商，open.bigmodel.cn）
-- `OPENAI_API_KEY` — OpenAI（可选，Phase 2 语音用）
+- `VOICE_PROVIDER` — 语音方案：`browser`（零成本） / `siliconflow`（推荐） / `openai`
+- `SILICONFLOW_API_KEY` — 硅基流动（免费注册 siliconflow.cn，推荐）
+- `OPENAI_API_KEY` — OpenAI（可选，付费但质量最高）
 - `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` — 自动化测试账号（可选）
+
+> 💡 **语音零成本方案**：不配任何 API Key 时自动使用浏览器内置语音（Web Speech API），完全免费。
 
 ### 启动开发服务器
 ```bash
@@ -72,7 +76,7 @@ npm run dev
 |-------|------|------|
 | v1.0 | 基础框架 + 数据层 + 做题器核心功能 | ✅ 完成 |
 | Phase 1 | AI 对话核心 + 孩子端重写 + 测试 | ✅ 完成 |
-| Phase 2 | 语音交互 + 基础花园可视化 | ← 下一步 |
+| Phase 2 | 语音交互 + 基础花园可视化 | ✅ 完成 |
 | Phase 3 | 创造模式（故事/数学/英语） | 待开始 |
 | Phase 4 | 智能课程引擎 + 家长 AI 洞察 | 待开始 |
 

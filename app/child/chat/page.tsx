@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, Suspense } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useFairyChat } from '@/lib/hooks/use-fairy-chat'
@@ -8,6 +8,7 @@ import FairyAvatar from '@/components/child/fairy-avatar'
 import ChatBubble from '@/components/child/chat-bubble'
 import OptionButtons from '@/components/child/option-buttons'
 import ChatInput from '@/components/child/chat-input'
+import { speakText, getVoiceSettings } from '@/lib/audio-player'
 import type { LearningMode } from '@/types'
 
 /** 模式配置 */
@@ -77,7 +78,9 @@ function ChatPageInner() {
   } = useFairyChat(mode, subject, initialConvId)
 
   const [input, setInput] = useState('')
+  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'recognizing' | 'speaking'>('idle')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const prevMsgCountRef = useRef(0)
 
   // 自动滚动到底部
   useEffect(() => {
@@ -87,6 +90,32 @@ function ChatPageInner() {
     }
   }, [messages, options])
 
+  // AI 回复完成后自动播放 TTS
+  useEffect(() => {
+    const count = messages.length
+    if (count > prevMsgCountRef.current && !isStreaming) {
+      const lastMsg = messages[count - 1]
+      if (lastMsg?.role === 'assistant') {
+        const settings = getVoiceSettings()
+        if (settings.autoPlay) {
+          // 提取纯文本（去除 commands JSON）
+          const plainText = lastMsg.content
+            .replace(/\[commands:[^\]]*\]/g, '')
+            .trim()
+          if (plainText) {
+            // 异步播放，不阻塞渲染
+            void (async () => {
+              setVoiceStatus('speaking')
+              try { await speakText(plainText, settings) } finally { setVoiceStatus('idle') }
+            })()
+          }
+        }
+      }
+    }
+    prevMsgCountRef.current = count
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, isStreaming])
+
   // 发送消息
   async function handleSend(e?: React.FormEvent) {
     e?.preventDefault?.()
@@ -95,6 +124,33 @@ function ChatPageInner() {
     setInput('')
     await send(text)
   }
+
+  // 语音录音完成 → STT → 发送
+  // 如果是 browser provider，录音仍然可以发给服务端（如有 API Key）
+  // 或者直接用浏览器 STT（参见 voice-button 组件的 onTextResult）
+  const handleVoiceRecording = useCallback(async (blob: Blob) => {
+    setVoiceStatus('recognizing')
+    try {
+      const formData = new FormData()
+      formData.append('audio', blob, 'recording.webm')
+      formData.append('language', 'zh')
+
+      const res = await fetch('/api/voice/stt', { method: 'POST', body: formData })
+      const data = await res.json()
+
+      // browser provider 返回 400 + provider:'browser'，说明不支持服务端 STT
+      if (data.provider === 'browser' || !data.text) {
+        setVoiceStatus('idle')
+        return
+      }
+
+      setInput(data.text)
+      setVoiceStatus('idle')
+      await send(data.text)
+    } catch {
+      setVoiceStatus('idle')
+    }
+  }, [send])
 
   // 选项按钮点击
   async function handleOptionSelect(option: string) {
@@ -218,13 +274,27 @@ function ChatPageInner() {
         )}
       </div>
 
+      {/* 语音状态提示 */}
+      {voiceStatus === 'recognizing' && (
+        <div className="text-center py-2 text-sm text-muted-brown animate-card-enter">
+          👂 精灵在听...
+        </div>
+      )}
+      {voiceStatus === 'speaking' && (
+        <div className="text-center py-2 text-sm text-muted-brown animate-card-enter">
+          🗣️ 精灵在说话...
+        </div>
+      )}
+
       {/* 输入区域 */}
       <div className="flex-shrink-0">
         <ChatInput
           value={input}
           onChange={setInput}
           onSubmit={handleSend}
+          onVoiceRecording={handleVoiceRecording}
           isLoading={isStreaming}
+          voiceEnabled={true}
         />
       </div>
     </div>

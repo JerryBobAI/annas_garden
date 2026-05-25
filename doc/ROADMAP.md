@@ -1,7 +1,8 @@
 # Anna's Garden - AI 原生教育技术路线图
 
 > 基于 VISION.md 决策 (2026-05-24) 制定
-> 状态：待确认
+> 最后更新：2026-05-25
+> 状态：Phase 1 + Phase 2 已完成，Phase 3 待开始
 
 ---
 
@@ -13,7 +14,7 @@
 ```
 Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 技术债务修复   AI 对话核心   语音交互     创造模式     智能课程引擎
-(1 周)        (2-3 周)     (1-2 周)    (2-3 周)     (持续迭代)
+(融入P1) ✅   ✅ (05-24)    ✅ (05-25)  ← 下一步     (持续迭代)
 ```
 
 ---
@@ -391,9 +392,22 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ---
 
-## 下一步行动
+## 实际进展
 
-确认这份路线图后，我建议从 **Phase 0.2（数据库扩展）+ Phase 0.3（依赖安装）** 开始，
-然后并行推进 **Phase 0.1（代码修复）** 和 **Phase 1.1（System Prompt 设计）**。
+| Phase | 完成日期 | 关键成果 |
+|-------|----------|----------|
+| Phase 0 | 2026-05-24 | 融入 Phase 1，技术债务同步解决 |
+| Phase 1 | 2026-05-24 | AI 对话核心、孩子端重写、结构化输出、18 测试用例 |
+| Phase 2 | 2026-05-25 | 多 Provider 语音交互、花园可视化、41 测试用例 |
+| Phase 3 | 待开始 | 创造模式（故事/数学/英语） |
+| Phase 4 | 待开始 | 智能课程引擎 + 家长 AI 洞察 |
 
-**你确认这份路线图，我就开始动手？**
+### Phase 2 关键技术决策
+
+- **语音方案**：采用多 Provider 抽象层（browser / siliconflow / openai）
+- **STT**：SiliconFlow SenseVoice（推荐）/ OpenAI Whisper / Web Speech API
+- **TTS**：SiliconFlow CosyVoice2 diana 声音（推荐）/ OpenAI TTS / Web Speech API
+- **零成本方案**：不配 API Key 时自动回退到浏览器 Web Speech API
+- **花园可视化**：CSS + div 方案（Phase 2 植物数量少，简单高效）
+
+**下一步：Phase 3 — 创造模式（故事创作 / 数学探索 / 英语冒险）**
