@@ -1,3 +1,4 @@
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 const GLM_BASE_URL = (process.env.GLM_BASE_URL || 'https://open.bigmodel.cn/api/paas').replace(/\/v4\/chat\/completions\/?$/, '')
@@ -37,6 +38,13 @@ const SYSTEM_PROMPT = `你是一位专业的一年级小学教师，擅长根据
 }`
 
 export async function POST(req: NextRequest) {
+  // 认证检查：防止匿名用户调用消耗 AI 额度
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+  }
+
   if (!GLM_API_KEY) {
     return NextResponse.json(
       { error: '请先在 .env.local 中配置 GLM_API_KEY' },
@@ -55,6 +63,7 @@ export async function POST(req: NextRequest) {
 
     const subjectHint = subject ? `学科：${subject}。` : ''
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let messages: any[]
 
     if (mode === 'image' && image) {
@@ -165,10 +174,10 @@ export async function POST(req: NextRequest) {
         }
       }),
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('AI generate error:', err)
     return NextResponse.json(
-      { error: err.message || 'AI 生成失败' },
+      { error: err instanceof Error ? err.message : 'AI 生成失败' },
       { status: 500 }
     )
   }

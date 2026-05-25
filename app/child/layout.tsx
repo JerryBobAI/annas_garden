@@ -1,9 +1,10 @@
 'use client'
 
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { playNavigate } from '@/lib/sounds'
+import { stopAllAudio } from '@/lib/audio-player'
 
 /**
  * 底部导航栏项目配置
@@ -90,10 +91,21 @@ export default function ChildLayout({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const prevPathRef = useRef(pathname)
+
+  // 页面切换时停止所有正在播放的语音
+  useEffect(() => {
+    if (prevPathRef.current !== pathname) {
+      stopAllAudio()
+      prevPathRef.current = pathname
+    }
+  }, [pathname])
+
   return (
     <div className="min-h-screen watercolor-bg">
       <Suspense fallback={<ChildLoading />}>
-        <main className="pb-20">
+        <main className="pb-32">
           {children}
         </main>
       </Suspense>

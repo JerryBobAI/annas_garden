@@ -46,9 +46,16 @@ export default function ChatBubble({
           isAssistant ? 'bubble-assistant' : 'bubble-user'
         }`}
       >
-        {content}
-        {isStreaming && (
-          <span className="inline-block ml-1 animate-hint-pulse">▍</span>
+        {/* 等待首 token 时显示思考动画 */}
+        {isStreaming && !content ? (
+          <span className="text-muted-brown animate-hint-pulse">精灵在想...</span>
+        ) : (
+          <>
+            {content}
+            {isStreaming && (
+              <span className="inline-block ml-1 animate-hint-pulse">▍</span>
+            )}
+          </>
         )}
       </div>
     </motion.div>

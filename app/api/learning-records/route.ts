@@ -30,9 +30,9 @@ export async function GET(request: NextRequest) {
   // 统计
   const stats = {
     total: data.length,
-    totalDuration: data.reduce((sum: number, r: any) => sum + (r.duration || 0), 0),
-    correctCount: data.filter((r: any) => r.is_correct === true).length,
-    practiceCount: data.filter((r: any) => r.activity_type === 'practice').length,
+    totalDuration: data.reduce((sum: number, r: Record<string, unknown>) => sum + (Number(r.duration) || 0), 0),
+    correctCount: data.filter((r: Record<string, unknown>) => r.is_correct === true).length,
+    practiceCount: data.filter((r: Record<string, unknown>) => r.activity_type === 'practice').length,
   }
 
   return NextResponse.json({ data, stats })

@@ -160,6 +160,7 @@ export default function ContentManagePage() {
   // 学科切换时加载目标
   useEffect(() => {
     if (!subject) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLearningGoals([])
       setSelectedGoalId('')
       return
@@ -182,6 +183,7 @@ export default function ContentManagePage() {
 
   useEffect(() => {
     if (selectedTab === 'external') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchDataSources()
     }
   }, [selectedTab, fetchDataSources])
@@ -267,8 +269,8 @@ export default function ContentManagePage() {
       setDescription('')
       setSelectedGoalId('')
       setExercises([{ ...emptyExercise }])
-    } catch (err: any) {
-      showMessage('error', err.message || '保存失败')
+    } catch (err: unknown) {
+      showMessage('error', err instanceof Error ? err.message : '保存失败')
     } finally {
       setLoading(false)
     }
@@ -326,8 +328,8 @@ export default function ContentManagePage() {
       setNewSource({ name: '', type: 'rss', url: '' })
       setShowAddSource(false)
       fetchDataSources()
-    } catch (err: any) {
-      showMessage('error', err.message || '添加失败')
+    } catch (err: unknown) {
+      showMessage('error', err instanceof Error ? err.message : '添加失败')
     } finally {
       setLoading(false)
     }
@@ -370,8 +372,8 @@ export default function ContentManagePage() {
       }
 
       setAiResult(data)
-    } catch (err: any) {
-      setAiError(err.message || '网络错误')
+    } catch (err: unknown) {
+      setAiError(err instanceof Error ? err.message : '网络错误')
     } finally {
       setAiLoading(false)
     }
@@ -436,8 +438,8 @@ export default function ContentManagePage() {
       setAiText('')
       setAiImage(null)
       setAiImageName('')
-    } catch (err: any) {
-      showMessage('error', err.message || '保存失败')
+    } catch (err: unknown) {
+      showMessage('error', err instanceof Error ? err.message : '保存失败')
     } finally {
       setAiSaving(false)
     }

@@ -7,7 +7,7 @@ import type { GardenPlant } from '@/lib/garden/growth'
 import Link from 'next/link'
 
 interface PlantDetailProps {
-  plant: GardenPlant | null
+  plant: (GardenPlant & { source_mode?: string | null; source_subject?: string | null }) | null
   onClose: () => void
 }
 
@@ -24,6 +24,11 @@ export default function PlantDetail({ plant, onClose }: PlantDetailProps) {
     chinese: '语文',
     english: '英语',
   }
+  const sourceMode = plant.source_mode || 'explore'
+  const sourceSubject = plant.source_subject || plant.subject
+  const conversationHref = `/child/chat?mode=${encodeURIComponent(sourceMode)}${
+    sourceSubject ? `&subject=${encodeURIComponent(sourceSubject)}` : ''
+  }&conversationId=${encodeURIComponent(plant.source_conversation_id || '')}`
 
   // 成长历程（基于 growth_stage 推算）
   const stages = [
@@ -114,7 +119,7 @@ export default function PlantDetail({ plant, onClose }: PlantDetailProps) {
               {/* 来源对话 */}
               {plant.source_conversation_id && (
                 <Link
-                  href={`/child/chat?conversationId=${plant.source_conversation_id}`}
+                  href={conversationHref}
                   className="block text-center text-sm py-2 rounded-full"
                   style={{ backgroundColor: 'rgba(255,179,0,0.1)', color: '#FFB300' }}
                 >

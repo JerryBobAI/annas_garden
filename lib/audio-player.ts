@@ -14,6 +14,26 @@ const DEFAULT_SETTINGS: VoiceSettings = {
   speed: 1.0,
 }
 
+/** 当前正在播放的 Audio 实例，用于页面切换时停止 */
+let _currentAudio: HTMLAudioElement | null = null
+
+/**
+ * 停止所有正在播放的语音（服务端 TTS + 浏览器内置 TTS）
+ * 页面切换时调用此函数
+ */
+export function stopAllAudio() {
+  // 停止服务端 TTS 播放的 Audio 元素
+  if (_currentAudio) {
+    _currentAudio.pause()
+    _currentAudio.currentTime = 0
+    _currentAudio = null
+  }
+  // 停止浏览器内置语音合成
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
+  }
+}
+
 /**
  * 播放来自 API 响应的音频
  */
@@ -25,19 +45,30 @@ export async function playAudioFromResponse(
 
   const audioBlob = await response.blob()
   const audioUrl = URL.createObjectURL(audioBlob)
+
+  // 停止上一次播放
+  if (_currentAudio) {
+    _currentAudio.pause()
+    _currentAudio.currentTime = 0
+  }
+
   const audio = new Audio(audioUrl)
   audio.volume = volume
   audio.playbackRate = speed
+  _currentAudio = audio
 
   return new Promise((resolve, reject) => {
-    audio.onended = () => {
+    let settled = false
+    const cleanup = () => {
+      if (settled) return
+      settled = true
       URL.revokeObjectURL(audioUrl)
-      resolve()
+      if (_currentAudio === audio) _currentAudio = null
     }
-    audio.onerror = () => {
-      URL.revokeObjectURL(audioUrl)
-      reject(new Error('音频播放失败'))
-    }
+    audio.onended = () => { cleanup(); resolve() }
+    // pause 也 resolve，这样 stopAllAudio() 后调用方的 finally 能正常执行
+    audio.onpause = () => { cleanup(); resolve() }
+    audio.onerror = () => { cleanup(); reject(new Error('音频播放失败')) }
     audio.play().catch(reject)
   })
 }

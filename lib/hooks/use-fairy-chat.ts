@@ -29,6 +29,8 @@ export interface UseFairyChatReturn {
   error: string | null
   /** 当前对话 ID（首次发送后由服务端创建） */
   conversationId: string | null
+  /** 最近完成/保存的创作 ID */
+  latestCreationId: string | null
   /** 发送一条消息 */
   send: (text: string) => Promise<void>
   /** 重试上一条 */
@@ -114,6 +116,7 @@ export function useFairyChat(
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId || null,
   )
+  const [latestCreationId, setLatestCreationId] = useState<string | null>(null)
   // 记住最后一条用户消息，方便重试
   const lastUserMessageRef = useRef<string>('')
   // 中断控制器
@@ -126,6 +129,9 @@ export function useFairyChat(
     async function loadHistory() {
       // 重置状态再加载（在 async 函数内调用避免同步 setState in effect body）
       setMessages([])
+      setConversationId(initialConversationId || null)
+      setLatestCreationId(null)
+      setOptions([])
       setIsLoading(true)
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -136,13 +142,20 @@ export function useFairyChat(
 
         if (!targetConvId) {
           // 查找该模式今天最近的会话
-          const { data: recentConvs } = await supabase
+          // 创造模式下按 mode + subject 过滤，避免不同学科共用会话
+          let convQuery = supabase
             .from('conversations')
             .select('id, started_at')
             .eq('child_id', user.id)
             .eq('mode', mode)
             .order('started_at', { ascending: false })
             .limit(1)
+
+          if (mode === 'create' && subject) {
+            convQuery = convQuery.eq('subject', subject)
+          }
+
+          const { data: recentConvs } = await convQuery
 
           const recentConv = recentConvs?.[0]
           if (recentConv) {
@@ -193,6 +206,7 @@ export function useFairyChat(
           if (lastAi?.commands) {
             setEmotion(lastAi.commands.emotion || 'happy')
             setOptions(lastAi.commands.options || [])
+            setLatestCreationId(lastAi.commands.creation_id || null)
           }
         }
       } catch (err) {
@@ -206,7 +220,7 @@ export function useFairyChat(
 
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, initialConversationId])
+  }, [mode, subject, initialConversationId])
 
   const send = useCallback(
     async (text: string) => {
@@ -286,6 +300,22 @@ export function useFairyChat(
         // 更新精灵情绪和选项
         setEmotion(commands.emotion || 'happy')
         setOptions(commands.options || [])
+
+        let creationId = commands.creation_id || null
+        if (!creationId && mode === 'create' && commands.creation_complete) {
+          const activeConversationId = newConvId || conversationId
+          if (activeConversationId) {
+            const { data: creation } = await supabase
+              .from('creations')
+              .select('id')
+              .eq('conversation_id', activeConversationId)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .single()
+            creationId = creation?.id || null
+          }
+        }
+        if (creationId) setLatestCreationId(creationId)
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === 'AbortError') return
 
@@ -300,6 +330,7 @@ export function useFairyChat(
         abortRef.current = null
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [mode, subject, conversationId, isStreaming],
   )
 
@@ -323,6 +354,7 @@ export function useFairyChat(
     isLoading,
     error,
     conversationId,
+    latestCreationId,
     send,
     retry,
     clearError,

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 
 export default function ParentPage() {
   return (
@@ -9,13 +10,7 @@ export default function ParentPage() {
         {/* 顶部导航 */}
         <div className="glass-card rounded-soft p-4 mb-8">
           <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="px-4 py-2 text-sm rounded-soft glass-card border-soft hover:bg-white/90 transition-all"
-              style={{ color: '#3A2E2C' }}
-            >
-              ← 返回首页
-            </Link>
+            <BackIconLink href="/child" label="返回孩子花园" />
             <div className="text-center">
               <h1 className="text-2xl font-bold" style={{ color: '#3A2E2C' }}>
                 🌿 家长中心

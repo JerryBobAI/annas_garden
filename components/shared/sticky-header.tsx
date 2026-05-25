@@ -35,6 +35,7 @@ export function StickyHeader({
     >
       <Link
         href={backHref}
+        aria-label="返回"
         className="text-2xl touch-target flex items-center justify-center w-10"
         style={{ color: '#3A2E2C' }}
       >

@@ -59,4 +59,26 @@ describe('parseAIResponse', () => {
     expect(result.text).toBe('')
     expect(result.commands.emotion).toBe(DEFAULT_OUTPUT.emotion)
   })
+
+  it('创造模式扩展字段不会被过滤', () => {
+    const raw = JSON.stringify({
+      text: '第一页写好了！',
+      commands: {
+        emotion: 'cheering',
+        creation_page: '从前有一颗会发光的种子。',
+        creation_title: '发光种子的冒险',
+        creation_complete: true,
+        illustration_prompt: '温暖水彩风的小花园和发光种子',
+        creation_id: 'creation-1',
+      },
+    })
+
+    const result = parseAIResponse(raw)
+
+    expect(result.commands.creation_page).toBe('从前有一颗会发光的种子。')
+    expect(result.commands.creation_title).toBe('发光种子的冒险')
+    expect(result.commands.creation_complete).toBe(true)
+    expect(result.commands.illustration_prompt).toBe('温暖水彩风的小花园和发光种子')
+    expect(result.commands.creation_id).toBe('creation-1')
+  })
 })

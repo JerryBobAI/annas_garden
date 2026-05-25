@@ -4,7 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getSystemPrompt } from '@/lib/ai/prompts'
 import { parseAIResponse } from '@/lib/ai/structured-output'
 import { estimateTokens, truncateHistory } from '@/lib/ai/token-manager'
-import { ChatRequest, Message } from '@/types'
+import { inferCreationType, getDefaultCoverEmoji } from '@/lib/ai/prompts-create'
+import { isEmptyCreationContent, mergeCreationContent } from '@/lib/ai/creation-save'
+import { applyGardenEvent, type GardenSupabaseClient } from '@/lib/garden/events'
+import { ChatRequest, Message, Subject } from '@/types'
 
 export async function POST(req: Request) {
   // 1. 认证
@@ -110,14 +113,18 @@ export async function POST(req: Request) {
         const { text: parsedText, commands } = parseAIResponse(text)
         const aiTokens = estimateTokens(text)
 
-        // 保存 AI 消息
-        await supabase.from('messages').insert({
-          conversation_id: conversationId,
-          role: 'assistant',
-          content: parsedText,
-          structured_output: commands,
-          token_count: aiTokens,
-        })
+        // 保存 AI 消息；创造模式稍后可能补写 creation_id。
+        const { data: aiMessage } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'assistant',
+            content: parsedText,
+            structured_output: commands,
+            token_count: aiTokens,
+          })
+          .select('id')
+          .single()
 
         // 更新对话消息计数
         const { data: conv } = await supabase
@@ -158,6 +165,22 @@ export async function POST(req: Request) {
           })
           .eq('id', conversationId)
 
+        // 服务端直接处理花园事件，避免只记录 metadata 但花园不生长。
+        if (commands.garden_event) {
+          try {
+            await applyGardenEvent({
+              supabase: supabase as unknown as GardenSupabaseClient,
+              childId: user.id,
+              event: commands.garden_event,
+              conversationId,
+              knowledgeTags: newTags,
+              subject: subject as Subject | undefined,
+            })
+          } catch (gardenError) {
+            console.error('Failed to apply garden event:', gardenError)
+          }
+        }
+
         // 更新知识掌握度
         if (newTags.length > 0 && subject) {
           for (const tag of newTags) {
@@ -189,6 +212,134 @@ export async function POST(req: Request) {
                   last_practiced_at: new Date().toISOString(),
                   source_conversations: [conversationId],
                 })
+            }
+          }
+        }
+
+        // ── Phase 3: 创造模式自动保存 ──
+        if (mode === 'create') {
+          const creationPage = commands.creation_page
+          const creationTitle = commands.creation_title
+          const creationComplete = commands.creation_complete
+          const illustrationPrompt = commands.illustration_prompt
+
+          if (creationPage) {
+            // 查找该对话关联的进行中创作
+            const { data: existingCreation } = await supabase
+              .from('creations')
+              .select('id, title, content, word_count, knowledge_tags')
+              .eq('conversation_id', conversationId)
+              .eq('child_id', user.id)
+              .eq('status', 'in_progress')
+              .single()
+
+            let creationId: string | null = null
+
+            if (existingCreation) {
+              creationId = existingCreation.id
+            } else {
+              // 首次创造 → 创建创作记录
+              const creationType = inferCreationType(subject as 'chinese' | 'math' | 'english' | undefined)
+              const coverEmoji = getDefaultCoverEmoji(subject as 'chinese' | 'math' | 'english' | undefined)
+              const { data: newCreation, error: createErr } = await supabase
+                .from('creations')
+                .insert({
+                  child_id: user.id,
+                  creation_type: creationType,
+                  title: creationTitle || '未命名创作',
+                  subject: subject || 'chinese',
+                  cover_emoji: coverEmoji,
+                  conversation_id: conversationId,
+                  content: {},
+                })
+                .select('id')
+                .single()
+
+              if (createErr || !newCreation) {
+                console.error('Failed to create creation:', createErr)
+              } else {
+                creationId = newCreation.id
+              }
+            }
+
+            if (creationId) {
+              // 获取当前页数
+              const { count: pageCount } = await supabase
+                .from('creation_pages')
+                .select('id', { count: 'exact', head: true })
+                .eq('creation_id', creationId)
+
+              const nextPage = (pageCount || 0) + 1
+
+              // 保存新页面
+              await supabase.from('creation_pages').insert({
+                creation_id: creationId,
+                page_number: nextPage,
+                author: 'both',
+                content: creationPage,
+                illustration_prompt: illustrationPrompt || null,
+                knowledge_tags: commands.knowledge_tags || [],
+              })
+
+              const existingTags = Array.isArray(existingCreation?.knowledge_tags)
+                ? existingCreation.knowledge_tags
+                : []
+              const mergedCreationTags = [...new Set([...existingTags, ...(commands.knowledge_tags || [])])]
+              const mergedContent = mergeCreationContent(
+                subject as Subject | undefined,
+                existingCreation?.content,
+                creationPage,
+                nextPage,
+                commands.knowledge_tags || [],
+              )
+
+              // 更新创作标题、内容和完成状态。
+              const updateData: Record<string, unknown> = {
+                word_count: (existingCreation?.word_count || 0) + creationPage.length,
+                content: mergedContent,
+                knowledge_tags: mergedCreationTags,
+              }
+              if (
+                creationTitle &&
+                (!existingCreation ||
+                  existingCreation.title === '未命名创作' ||
+                  isEmptyCreationContent(existingCreation.content))
+              ) {
+                updateData.title = creationTitle
+              }
+
+              // 如果创作完成
+              if (creationComplete) {
+                updateData.status = 'completed'
+              }
+
+              await supabase
+                .from('creations')
+                .update(updateData)
+                .eq('id', creationId)
+
+              commands.creation_id = creationId
+              if (aiMessage?.id) {
+                await supabase
+                  .from('messages')
+                  .update({ structured_output: commands })
+                  .eq('id', aiMessage.id)
+              }
+
+              if (creationComplete) {
+                try {
+                  await applyGardenEvent({
+                    supabase: supabase as unknown as GardenSupabaseClient,
+                    childId: user.id,
+                    event: 'bloom',
+                    conversationId,
+                    knowledgeTags: mergedCreationTags,
+                    subject: subject as Subject | undefined,
+                  })
+                } catch (gardenError) {
+                  console.error('Failed to bloom creation plant:', gardenError)
+                }
+              }
             }
           }
         }

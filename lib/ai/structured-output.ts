@@ -106,7 +106,7 @@ function validateCommands(raw: Record<string, unknown>): AIStructuredOutput {
   const validEvents = ['seed_planted', 'sprout', 'bloom', null]
   const validModes = ['explore', 'quest', 'create', null]
 
-  return {
+  const result: AIStructuredOutput = {
     emotion: validEmotions.includes(raw.emotion as string)
       ? (raw.emotion as AIStructuredOutput['emotion'])
       : 'happy',
@@ -126,4 +126,23 @@ function validateCommands(raw: Record<string, unknown>): AIStructuredOutput {
       ? (raw.next_mode as AIStructuredOutput['next_mode'])
       : null,
   }
+
+  // Phase 3: 保留创造模式扩展字段
+  if (typeof raw.creation_page === 'string' && raw.creation_page.trim()) {
+    result.creation_page = raw.creation_page.trim()
+  }
+  if (typeof raw.creation_title === 'string' && raw.creation_title.trim()) {
+    result.creation_title = raw.creation_title.trim()
+  }
+  if (typeof raw.creation_complete === 'boolean') {
+    result.creation_complete = raw.creation_complete
+  }
+  if (typeof raw.illustration_prompt === 'string' && raw.illustration_prompt.trim()) {
+    result.illustration_prompt = raw.illustration_prompt.trim()
+  }
+  if (typeof raw.creation_id === 'string' && raw.creation_id.trim()) {
+    result.creation_id = raw.creation_id.trim()
+  }
+
+  return result
 }

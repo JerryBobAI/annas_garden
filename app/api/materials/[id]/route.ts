@@ -7,6 +7,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+  }
   const { id } = await params
   const body = await request.json()
 
@@ -27,6 +31,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+  }
   const { id } = await params
 
   const { error } = await supabase.from('materials').delete().eq('id', id)

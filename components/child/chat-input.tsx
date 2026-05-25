@@ -9,8 +9,10 @@ interface ChatInputProps {
   onChange: (v: string) => void
   onSubmit: (e: FormEvent) => void
   onVoiceRecording?: (blob: Blob) => void
+  onVoiceTextResult?: (text: string) => void
   isLoading: boolean
   voiceEnabled?: boolean
+  voiceProvider?: string
 }
 
 /**
@@ -22,8 +24,10 @@ export default function ChatInput({
   onChange,
   onSubmit,
   onVoiceRecording,
+  onVoiceTextResult,
   isLoading,
   voiceEnabled = true,
+  voiceProvider = 'server',
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [showVoice, setShowVoice] = useState(false)
@@ -68,6 +72,8 @@ export default function ChatInput({
           </button>
           <VoiceButton
             onRecordingComplete={onVoiceRecording}
+            onTextResult={onVoiceTextResult}
+            useBrowserSTT={voiceProvider === 'browser'}
             disabled={isLoading}
           />
           <div className="w-16" /> {/* 占位平衡布局 */}

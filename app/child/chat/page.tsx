@@ -1,15 +1,16 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useFairyChat } from '@/lib/hooks/use-fairy-chat'
 import FairyAvatar from '@/components/child/fairy-avatar'
+import { FairySecretHomeWrap } from '@/components/child/fairy-secret-home'
 import ChatBubble from '@/components/child/chat-bubble'
 import OptionButtons from '@/components/child/option-buttons'
 import ChatInput from '@/components/child/chat-input'
-import { speakText, getVoiceSettings } from '@/lib/audio-player'
-import type { LearningMode } from '@/types'
+import { speakText, getVoiceSettings, stopAllAudio } from '@/lib/audio-player'
+import type { LearningMode, Subject } from '@/types'
 
 /** 模式配置 */
 const MODE_CONFIG: Record<string, { label: string; icon: string; greeting: string }> = {
@@ -28,6 +29,22 @@ const MODE_CONFIG: Record<string, { label: string; icon: string; greeting: strin
     icon: '✏️',
     greeting: '太棒了，你选了创造模式！🌈 我们可以一起编故事、画画、做各种有趣的创作！你想从哪里开始？',
   },
+  // 创造模式学科级配置
+  'create:chinese': {
+    label: '编故事',
+    icon: '📖',
+    greeting: '来吧，我们一起编一个有趣的故事！📖 你想讲一个什么样的故事呢？可以是冒险、童话、科幻……你来决定！',
+  },
+  'create:math': {
+    label: '数学探索',
+    icon: '🔢',
+    greeting: '数学探索时间！🔢 我们用生活中的例子来玩数学，你想探索哪个数学话题呢？',
+  },
+  'create:english': {
+    label: '英语冒险',
+    icon: '🔤',
+    greeting: 'English Adventure Time! 🔤 我们一起用英语去冒险吧！你想去哪里探险呢？',
+  },
 }
 
 /**
@@ -39,6 +56,17 @@ const MODE_TABS: { mode: LearningMode; icon: string; label: string }[] = [
   { mode: 'explore', icon: '🌿', label: '探索' },
   { mode: 'quest', icon: '⚔️', label: '任务' },
   { mode: 'create', icon: '✏️', label: '创造' },
+]
+
+/** 跳过历史消息加载后的 TTS（模块级变量，避免 React Compiler ref 跨 effect 限制）
+ *  初始为 true：首次加载历史也不朗读，问候语由单独的 effect 处理 */
+let _skipNextTts = true
+
+/** 创造模式学科子 tab */
+const CREATE_SUBJECT_TABS: { subject: Subject; icon: string; label: string }[] = [
+  { subject: 'chinese', icon: '📖', label: '故事' },
+  { subject: 'math', icon: '🔢', label: '数学' },
+  { subject: 'english', icon: '🔤', label: '英语' },
 ]
 
 export default function ChatPage() {
@@ -55,15 +83,37 @@ function ChatPageInner() {
   const urlMode = searchParams.get('mode')
   const savedMode = typeof window !== 'undefined' ? localStorage.getItem('lastChatMode') : null
   const mode = (urlMode || savedMode || 'explore') as LearningMode
-  const subject = searchParams.get('subject') || undefined
+  const rawSubject = searchParams.get('subject') || undefined
+  // 创造模式必须有学科：优先 URL 参数 > localStorage 记忆 > 默认故事
+  const savedSubject = typeof window !== 'undefined' ? localStorage.getItem('lastCreateSubject') : null
+  const subject = mode === 'create' ? (rawSubject || savedSubject || 'chinese') : rawSubject
   const initialConvId = searchParams.get('conversationId') || undefined
 
-  const config = MODE_CONFIG[mode] || MODE_CONFIG.explore
+  // 创造模式下使用学科级配置，否则用模式级配置
+  const configKey = mode === 'create' && subject ? `create:${subject}` : mode
+  const config = MODE_CONFIG[configKey] || MODE_CONFIG[mode] || MODE_CONFIG.explore
 
-  // 记住最后使用的模式
+  const router = useRouter()
+  const [input, setInput] = useState('')
+  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'recognizing' | 'speaking'>('idle')
+  const [voiceProvider, setVoiceProvider] = useState<string>('server')
+  const [voiceNotice, setVoiceNotice] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const prevMsgCountRef = useRef(0)
+
+  // 记住最后使用的模式和学科
   useEffect(() => {
     localStorage.setItem('lastChatMode', mode)
-  }, [mode])
+    if (mode === 'create' && subject) {
+      localStorage.setItem('lastCreateSubject', subject)
+    }
+  }, [mode, subject])
+
+  // 切换模式/学科时停止旧音频，跳过历史 TTS（问候语由单独 effect 处理）
+  useEffect(() => {
+    stopAllAudio()
+    _skipNextTts = true
+  }, [mode, subject])
 
   const {
     messages,
@@ -72,15 +122,26 @@ function ChatPageInner() {
     isStreaming,
     isLoading,
     error,
+    latestCreationId,
     send,
     retry,
     clearError,
   } = useFairyChat(mode, subject, initialConvId)
 
-  const [input, setInput] = useState('')
-  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'recognizing' | 'speaking'>('idle')
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const prevMsgCountRef = useRef(0)
+  useEffect(() => {
+    let cancelled = false
+    async function loadVoiceProvider() {
+      try {
+        const res = await fetch('/api/voice/provider')
+        const data = await res.json()
+        if (!cancelled) setVoiceProvider(data.provider || 'server')
+      } catch {
+        if (!cancelled) setVoiceProvider('server')
+      }
+    }
+    loadVoiceProvider()
+    return () => { cancelled = true }
+  }, [])
 
   // 自动滚动到底部
   useEffect(() => {
@@ -90,9 +151,35 @@ function ChatPageInner() {
     }
   }, [messages, options])
 
+  // 初始问候语 TTS（greeting 是纯 JSX，不在 messages 里，需单独朗读）
+  // 依赖 isLoading + messages.length + config.greeting，切学科后 greeting 变化也能正确朗读
+  useEffect(() => {
+    if (!isLoading && messages.length === 0 && config.greeting) {
+      const settings = getVoiceSettings()
+      if (settings.autoPlay) {
+        void (async () => {
+          setVoiceStatus('speaking')
+          try {
+            await speakText(config.greeting, settings)
+          } catch (err) {
+            console.warn('TTS 问候语播放失败:', err)
+          } finally {
+            setVoiceStatus('idle')
+          }
+        })()
+      }
+    }
+  }, [isLoading, messages.length, config.greeting])
+
   // AI 回复完成后自动播放 TTS
   useEffect(() => {
     const count = messages.length
+    // 切换学科后加载历史消息时跳过 TTS
+    if (_skipNextTts) {
+      _skipNextTts = false
+      prevMsgCountRef.current = count
+      return
+    }
     if (count > prevMsgCountRef.current && !isStreaming) {
       const lastMsg = messages[count - 1]
       if (lastMsg?.role === 'assistant') {
@@ -106,7 +193,13 @@ function ChatPageInner() {
             // 异步播放，不阻塞渲染
             void (async () => {
               setVoiceStatus('speaking')
-              try { await speakText(plainText, settings) } finally { setVoiceStatus('idle') }
+              try {
+                await speakText(plainText, settings)
+              } catch (err) {
+                console.warn('TTS 播放失败:', err)
+              } finally {
+                setVoiceStatus('idle')
+              }
             })()
           }
         }
@@ -130,7 +223,14 @@ function ChatPageInner() {
   // 或者直接用浏览器 STT（参见 voice-button 组件的 onTextResult）
   const handleVoiceRecording = useCallback(async (blob: Blob) => {
     setVoiceStatus('recognizing')
+    setVoiceNotice('')
     try {
+      if (voiceProvider === 'browser') {
+        setVoiceStatus('idle')
+        setVoiceNotice('当前浏览器语音模式会直接识别麦克风声音，请按住语音按钮说话后松开。')
+        return
+      }
+
       const formData = new FormData()
       formData.append('audio', blob, 'recording.webm')
       formData.append('language', 'zh')
@@ -141,6 +241,7 @@ function ChatPageInner() {
       // browser provider 返回 400 + provider:'browser'，说明不支持服务端 STT
       if (data.provider === 'browser' || !data.text) {
         setVoiceStatus('idle')
+        setVoiceNotice('当前浏览器不支持服务端语音识别，请使用支持 Web Speech API 的 Chrome 或 Edge。')
         return
       }
 
@@ -149,8 +250,18 @@ function ChatPageInner() {
       await send(data.text)
     } catch {
       setVoiceStatus('idle')
+      setVoiceNotice('精灵暂时没有听清楚，请再试一次。')
     }
-  }, [send])
+  }, [send, voiceProvider])
+
+  const handleBrowserVoiceText = useCallback(async (text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed || isStreaming) return
+    setVoiceNotice('')
+    setInput(trimmed)
+    setVoiceStatus('idle')
+    await send(trimmed)
+  }, [isStreaming, send])
 
   // 选项按钮点击
   async function handleOptionSelect(option: string) {
@@ -178,11 +289,13 @@ function ChatPageInner() {
           >
             ←
           </Link>
-          {/* 模式 tab 切换 */}
+          {/* 模式 tab 切换：始终显示探索/任务/创造 */}
           <div className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center gap-2">
             {MODE_TABS.map((tab) => {
               const isActive = tab.mode === mode
-              const href = `/child/chat?mode=${tab.mode}${subject ? `&subject=${encodeURIComponent(subject)}` : ''}`
+              const href = tab.mode === 'create'
+                ? `/child/chat?mode=create&subject=${subject || 'chinese'}`
+                : `/child/chat?mode=${tab.mode}`
               return (
                 <Link
                   key={tab.mode}
@@ -200,6 +313,10 @@ function ChatPageInner() {
               )
             })}
           </div>
+          {/* 精灵头像：右上角，与首页保持一致 */}
+          <FairySecretHomeWrap className="absolute right-4 flex items-center gap-1.5">
+            <FairyAvatar emotion={emotion} size="sm" animated={isStreaming || isLoading} />
+          </FairySecretHomeWrap>
         </div>
       </header>
 
@@ -209,11 +326,33 @@ function ChatPageInner() {
         className="flex-1 overflow-y-auto px-4 py-4"
         style={{ paddingBottom: '8px' }}
       >
-        {/* 精灵头像 */}
-        <div className="flex flex-col items-center mb-6 animate-card-enter">
-          <FairyAvatar emotion={emotion} size="lg" animated={isStreaming || isLoading} />
-          <p className="text-xs text-muted-brown mt-2">花园精灵</p>
-        </div>
+        {/* 创造模式：悬浮学科按钮 */}
+        {mode === 'create' && (
+          <div className="flex items-center justify-center gap-2 mb-4 animate-card-enter">
+            {CREATE_SUBJECT_TABS.map((tab) => {
+              const isActive = tab.subject === subject
+              return (
+                <button
+                  key={tab.subject}
+                  onClick={() => {
+                    if (!isActive) {
+                      router.replace(`/child/chat?mode=create&subject=${tab.subject}`)
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all touch-target whitespace-nowrap ${
+                    isActive ? 'text-white shadow-sm scale-105' : 'bg-white/60 hover:bg-white/80'
+                  }`}
+                  style={isActive
+                    ? { background: 'linear-gradient(135deg, #66BB6A 0%, #43A047 100%)' }
+                    : { color: '#5D4037', border: '1px solid rgba(58,46,44,0.12)' }
+                  }
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* 加载中提示 */}
         {isLoading && (
@@ -222,8 +361,8 @@ function ChatPageInner() {
           </div>
         )}
 
-        {/* 初始问候（仅在没有历史消息时显示，避免与历史记录重复） */}
-        {!isLoading && messages.length === 0 && (
+        {/* 模式问候语（始终作为对话第一条气泡） */}
+        {!isLoading && (
           <ChatBubble
             role="assistant"
             content={config.greeting}
@@ -272,9 +411,25 @@ function ChatPageInner() {
             disabled={isStreaming}
           />
         )}
+
+        {mode === 'create' && latestCreationId && (
+          <div className="flex justify-center my-4 animate-card-enter">
+            <Link
+              href={`/child/creations/${latestCreationId}`}
+              className="btn-primary px-5 py-2.5 text-white text-sm rounded-full touch-target"
+            >
+              📖 查看创作
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* 语音状态提示 */}
+      {voiceNotice && (
+        <div className="text-center py-2 px-4 text-sm text-muted-brown animate-card-enter">
+          {voiceNotice}
+        </div>
+      )}
       {voiceStatus === 'recognizing' && (
         <div className="text-center py-2 text-sm text-muted-brown animate-card-enter">
           👂 精灵在听...
@@ -293,6 +448,8 @@ function ChatPageInner() {
           onChange={setInput}
           onSubmit={handleSend}
           onVoiceRecording={handleVoiceRecording}
+          onVoiceTextResult={handleBrowserVoiceText}
+          voiceProvider={voiceProvider}
           isLoading={isStreaming}
           voiceEnabled={true}
         />

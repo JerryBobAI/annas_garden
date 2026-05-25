@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,6 +10,7 @@ interface MaterialWithExercises {
   grade: string
   type: string
   title: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content: any
   source: string
   status: string
@@ -19,6 +20,7 @@ interface MaterialWithExercises {
 
 interface Exercise {
   id: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   question: any
   options: string[] | null
   correct_answer: string
@@ -53,11 +55,8 @@ export default function ReviewPage() {
   const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchMaterials()
-  }, [])
-
-  async function fetchMaterials() {
+  // useCallback 包裹避免 React Compiler 级联渲染警告
+  const fetchMaterials = useCallback(async () => {
     setLoading(true)
     // 获取待审核资料
     const { data: draftData } = await supabase
@@ -83,6 +82,7 @@ export default function ReviewPage() {
       .limit(20)
 
     // 为每个资料获取练习题
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const enrichWithExercises = async (items: any[]) => {
       if (!items) return []
       return Promise.all(
@@ -106,7 +106,12 @@ export default function ReviewPage() {
     setApproved(approvedWithEx as MaterialWithExercises[])
     setRejected(rejectedWithEx as MaterialWithExercises[])
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchMaterials()
+  }, [fetchMaterials])
 
   async function handleAction(id: string, action: 'approved' | 'rejected' | 'draft') {
     const { error } = await supabase

@@ -9,6 +9,10 @@ import { getPlantEmoji } from '@/lib/garden/growth'
 import type { GardenPlant } from '@/lib/garden/growth'
 
 type SubjectFilter = 'all' | 'math' | 'chinese' | 'english'
+type GardenPlantWithConversation = GardenPlant & {
+  source_mode?: string | null
+  source_subject?: SubjectFilter | null
+}
 
 const SUBJECT_FILTERS: { value: SubjectFilter; label: string }[] = [
   { value: 'all', label: '全部' },
@@ -20,8 +24,8 @@ const SUBJECT_FILTERS: { value: SubjectFilter; label: string }[] = [
 export default function GardenPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
-  const [plants, setPlants] = useState<GardenPlant[]>([])
-  const [selectedPlant, setSelectedPlant] = useState<GardenPlant | null>(null)
+  const [plants, setPlants] = useState<GardenPlantWithConversation[]>([])
+  const [selectedPlant, setSelectedPlant] = useState<GardenPlantWithConversation | null>(null)
   const [filter, setFilter] = useState<SubjectFilter>('all')
   const [stats, setStats] = useState({ total: 0, seed: 0, sprout: 0, growing: 0, blooming: 0 })
 
@@ -44,7 +48,30 @@ export default function GardenPage() {
         return
       }
 
-      const allPlants = (plantsData || []) as GardenPlant[]
+      const allPlants = (plantsData || []) as GardenPlantWithConversation[]
+      const conversationIds = Array.from(new Set(
+        allPlants.map(p => p.source_conversation_id).filter(Boolean) as string[],
+      ))
+
+      if (conversationIds.length > 0) {
+        const { data: conversations } = await supabase
+          .from('conversations')
+          .select('id, mode, subject')
+          .in('id', conversationIds)
+
+        const conversationMap = new Map(
+          (conversations || []).map(c => [c.id, { mode: c.mode, subject: c.subject }]),
+        )
+
+        for (const plant of allPlants) {
+          const source = plant.source_conversation_id
+            ? conversationMap.get(plant.source_conversation_id)
+            : null
+          plant.source_mode = source?.mode || null
+          plant.source_subject = source?.subject || null
+        }
+      }
+
       setPlants(allPlants)
 
       // 统计各阶段
@@ -84,7 +111,7 @@ export default function GardenPage() {
   }
 
   return (
-    <main className="min-h-screen watercolor-bg pb-24">
+    <div className="min-h-screen watercolor-bg">
       <StickyHeader
         subtitle="成长花园"
         title="🏡 我的花园"
@@ -145,9 +172,9 @@ export default function GardenPage() {
         </div>
 
         {/* 植物列表 */}
-        <div className="card rounded-soft p-5 mb-6 animate-card-enter" style={{ '--stagger': '200ms' } as React.CSSProperties}>
+        <div className="card rounded-soft p-5 mb-8 pb-4 animate-card-enter" style={{ '--stagger': '200ms' } as React.CSSProperties}>
           <h3 className="text-sm font-semibold mb-3" style={{ color: '#5D4E4A' }}>
-            � 植物列表（{filteredPlants.length}）
+            🪴 植物列表（{filteredPlants.length}）
           </h3>
           {filteredPlants.length === 0 ? (
             <div className="text-center py-8 text-muted-brown text-sm">
@@ -191,6 +218,8 @@ export default function GardenPage() {
             </div>
           )}
         </div>
+        {/* 为底部固定导航留出可滚动空白，避免最后一项被遮挡 */}
+        <div className="h-24" aria-hidden="true" />
       </div>
 
       {/* 植物详情弹窗 */}
@@ -198,6 +227,6 @@ export default function GardenPage() {
         plant={selectedPlant}
         onClose={() => setSelectedPlant(null)}
       />
-    </main>
+    </div>
   )
 }

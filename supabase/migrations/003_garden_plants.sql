@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS garden_plants (
     CHECK (plant_type IN ('seed', 'sprout', 'growing', 'blooming', 'withered')),
   subject TEXT CHECK (subject IN ('math', 'chinese', 'english')),
   knowledge_tags TEXT[] DEFAULT '{}',
-  source_conversation_id UUID REFERENCES ai_conversations(id) ON DELETE SET NULL,
+  source_conversation_id UUID REFERENCES conversations(id) ON DELETE SET NULL,
   growth_stage INT NOT NULL DEFAULT 0 CHECK (growth_stage >= 0 AND growth_stage <= 100),
   last_watered_at TIMESTAMPTZ,
   position_x REAL NOT NULL DEFAULT 50,

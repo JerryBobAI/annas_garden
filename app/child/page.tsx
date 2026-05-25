@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import ModeCard from '@/components/child/mode-card'
-import { staggerContainerSlow, fadeInUp, springGentle } from '@/lib/animations'
+import { FairySecretHomeWrap } from '@/components/child/fairy-secret-home'
+import { AccountSecretSwitchWrap } from '@/components/child/account-secret-switch'
+import { staggerContainer, fadeInUp, springGentle } from '@/lib/animations'
 
 /**
  * 时段问候语（复用原有逻辑）
@@ -98,18 +100,18 @@ export default function ChildHomePage() {
       <div className="container mx-auto px-4 pt-8 pb-6">
         <div className="card rounded-soft p-6 animate-card-enter">
           <div className="flex items-center justify-between">
-            <div>
+            <AccountSecretSwitchWrap accountLabel={displayName}>
               <p className="text-sm mb-1 text-muted-brown">
                 {greeting.emoji} {greeting.text}
               </p>
               <h1 className="text-3xl font-bold text-primary-dark">
                 {displayName}
               </h1>
-            </div>
-            <div className="text-right">
+            </AccountSecretSwitchWrap>
+            <FairySecretHomeWrap className="text-right">
               <div className="text-5xl mb-1">🧚</div>
               <p className="text-xs text-muted-brown">花园精灵</p>
-            </div>
+            </FairySecretHomeWrap>
           </div>
         </div>
       </div>
@@ -118,7 +120,7 @@ export default function ChildHomePage() {
       <div className="container mx-auto px-4 mb-8">
         <motion.div
           className="grid grid-cols-2 gap-4"
-          variants={staggerContainerSlow}
+          variants={staggerContainer}
           initial="hidden"
           animate="visible"
         >
@@ -140,9 +142,8 @@ export default function ChildHomePage() {
             mode="create"
             icon="✏️"
             title="创造"
-            subtitle="编故事、做创作"
-            href="/child/chat?mode=create"
-            badge="新"
+            subtitle="故事·数学·英语"
+            href="/child/chat?mode=create&subject=chinese"
           />
           <motion.div
             variants={fadeInUp}
@@ -168,7 +169,7 @@ export default function ChildHomePage() {
         <h2 className="text-xl font-bold mb-4 text-primary-dark">
           📊 本周成长
         </h2>
-        <div className="card rounded-soft p-6 animate-card-enter" style={{ '--stagger': '350ms' } as React.CSSProperties}>
+        <div className="card rounded-soft p-6 animate-card-enter" style={{ '--stagger': '100ms' } as React.CSSProperties}>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-3xl font-bold mb-1 text-amber-accent">

@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 // GET /api/goals - 获取学习目标
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+  }
   const { searchParams } = new URL(request.url)
 
   const semesterId = searchParams.get('semester_id')
@@ -28,6 +32,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ data })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchGoals(supabase: any, semesterId: string | null, subject: string | null) {
   let query = supabase
     .from('learning_goals')

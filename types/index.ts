@@ -44,7 +44,7 @@ export interface Material {
   grade: string
   type: MaterialType
   title: string
-  content: any // JSON 存储结构化内容
+  content: Record<string, unknown> // JSON 存储结构化内容
   source: SourceType
   source_url?: string
   status: ContentStatus
@@ -56,8 +56,8 @@ export interface Material {
 export interface Exercise {
   id: string
   material_id: string
-  question: any // JSON 支持多种题型
-  options?: any[] // 选择题选项
+  question: Record<string, unknown> // JSON 支持多种题型
+  options?: Record<string, unknown>[] // 选择题选项
   correct_answer: string
   difficulty: Difficulty
   knowledge_points: string[] // 标签，如 ["加法", "进位"]
@@ -141,7 +141,7 @@ export interface StudyPlan {
   id: string
   child_id: string
   title: string
-  daily_goal: any // JSON 每日目标配置
+  daily_goal: Record<string, unknown> // JSON 每日目标配置
   start_date: string
   end_date: string
   status: 'active' | 'completed' | 'paused'
@@ -174,6 +174,12 @@ export interface AIStructuredOutput {
   difficulty?: number                   // 1-5
   garden_event?: GardenEvent
   next_mode?: LearningMode | null       // 建议切换的模式
+  // Phase 3: 创造模式扩展字段
+  creation_page?: string                // 本轮创作的页面内容
+  creation_title?: string               // AI 建议的创作标题
+  creation_complete?: boolean           // 创作是否完成
+  illustration_prompt?: string          // 插画生成 prompt
+  creation_id?: string                  // 已保存创作的 ID
 }
 
 // AI 对话会话
@@ -277,6 +283,84 @@ export interface ChatResponse {
     content: string
     structured_output: AIStructuredOutput
   }
+}
+
+// ============================================
+// Phase 3: 创造模式类型
+// ============================================
+
+// 创作类型
+export type CreationType = 'story' | 'math_exploration' | 'english_adventure'
+
+// 创作状态
+export type CreationStatus = 'in_progress' | 'completed' | 'archived'
+
+// 创作页面作者
+export type PageAuthor = 'child' | 'fairy' | 'both'
+
+// 创作作品
+export interface Creation {
+  id: string
+  child_id: string
+  creation_type: CreationType
+  title: string
+  subject: Subject
+  content: StoryContent | MathContent | EnglishContent
+  conversation_id?: string
+  knowledge_tags: string[]
+  word_count: number
+  status: CreationStatus
+  cover_emoji: string
+  is_favorite: boolean
+  created_at: string
+  updated_at: string
+}
+
+// 创作页面
+export interface CreationPage {
+  id: string
+  creation_id: string
+  page_number: number
+  author: PageAuthor
+  content: string
+  illustration_prompt?: string
+  knowledge_tags: string[]
+  created_at: string
+}
+
+// 故事内容
+export interface StoryContent {
+  genre: string
+  characters: string[]
+  setting: string
+  page_count: number
+  total_words: number
+}
+
+// 数学探索内容
+export interface MathContent {
+  topic: string
+  problem_count: number
+  correct_count: number
+  visualization_type: string
+  steps: MathStep[]
+}
+
+export interface MathStep {
+  step: number
+  problem: string
+  answer: number
+  correct: boolean
+  correct_answer?: number
+}
+
+// 英语冒险内容
+export interface EnglishContent {
+  scenario: string
+  character: string
+  dialogue_turns: number
+  new_words: string[]
+  pronunciation_attempts: number
 }
 
 // Onboarding 状态

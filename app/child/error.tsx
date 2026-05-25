@@ -5,7 +5,7 @@
  * 显示精灵困惑表情 + 友好错误提示 + 重试按钮
  */
 export default function ChildError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string }

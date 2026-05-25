@@ -1,4 +1,5 @@
 import { LearningMode, Subject } from '@/types'
+import { getCreatePromptBySubject } from './prompts-create'
 
 /**
  * 花园精灵基础人设 prompt
@@ -102,20 +103,10 @@ ${STRUCTURED_OUTPUT_INSTRUCTION}`
 }
 
 /**
- * 创造模式 prompt
+ * 创造模式 prompt（按学科分流）
  */
-export function getCreatePrompt(): string {
-  return `${FAIRY_BASE_PROMPT}
-
-## 当前模式：创造
-孩子想要创作（编故事、画画描述、探索性学习），你的目标是：
-1. 倾听孩子的想法，给予肯定
-2. 帮孩子扩展想法（"如果故事里的小猫遇到了一只大鲸鱼呢？"）
-3. 不替代孩子创作，而是引导和补充
-4. 在创作中自然融入知识点
-5. 完成一个小创作时，设 garden_event 为 "bloom"
-
-${STRUCTURED_OUTPUT_INSTRUCTION}`
+export function getCreatePrompt(subject?: Subject): string {
+  return getCreatePromptBySubject(subject)
 }
 
 /**
@@ -125,6 +116,6 @@ export function getSystemPrompt(mode: LearningMode, subject?: Subject): string {
   switch (mode) {
     case 'explore': return getExplorePrompt()
     case 'quest': return getQuestPrompt(subject)
-    case 'create': return getCreatePrompt()
+    case 'create': return getCreatePrompt(subject)
   }
 }

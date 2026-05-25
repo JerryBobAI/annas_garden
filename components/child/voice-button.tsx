@@ -3,9 +3,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { springBouncy } from '@/lib/animations'
+import { isBrowserSTTSupported, startBrowserSTT } from '@/lib/voice/browser-speech'
 
 interface VoiceButtonProps {
   onRecordingComplete: (audioBlob: Blob) => void
+  onTextResult?: (text: string) => void
+  useBrowserSTT?: boolean
   disabled?: boolean
   maxDuration?: number // 最长录音秒数，默认 60
 }
@@ -19,6 +22,8 @@ type VoiceStatus = 'idle' | 'recording' | 'processing'
  */
 export default function VoiceButton({
   onRecordingComplete,
+  onTextResult,
+  useBrowserSTT = false,
   disabled = false,
   maxDuration = 60,
 }: VoiceButtonProps) {
@@ -31,6 +36,8 @@ export default function VoiceButton({
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const browserStopRef = useRef<(() => void) | null>(null)
+  const browserTranscriptRef = useRef('')
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const animFrameRef = useRef<number | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -49,6 +56,8 @@ export default function VoiceButton({
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
     closeAudioContext()
     mediaRecorderRef.current = null
+    browserStopRef.current = null
+    browserTranscriptRef.current = ''
     analyserRef.current = null
     chunksRef.current = []
     timerRef.current = null
@@ -70,6 +79,41 @@ export default function VoiceButton({
     if (disabled) return
 
     try {
+      if (useBrowserSTT) {
+        if (!isBrowserSTTSupported()) {
+          console.error('浏览器不支持语音识别')
+          return
+        }
+
+        browserTranscriptRef.current = ''
+        const stop = startBrowserSTT({
+          lang: 'zh-CN',
+          continuous: false,
+          onResult: (text) => {
+            browserTranscriptRef.current = text
+          },
+          onError: (error) => {
+            console.error('浏览器语音识别失败:', error)
+          },
+        })
+
+        if (!stop) return
+        browserStopRef.current = stop
+        setStatus('recording')
+        setDuration(0)
+        setIsCancelled(false)
+        timerRef.current = setInterval(() => {
+          setDuration(prev => {
+            if (prev >= maxDuration - 1) {
+              stopRecording(false)
+              return prev
+            }
+            return prev + 1
+          })
+        }, 1000)
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
       // 设置 AudioContext 用于波形
@@ -127,6 +171,18 @@ export default function VoiceButton({
 
     if (timerRef.current) clearInterval(timerRef.current)
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+
+    if (useBrowserSTT) {
+      browserStopRef.current?.()
+      const text = browserTranscriptRef.current.trim()
+      cleanup()
+      setStatus('idle')
+      setAmplitude(0)
+      if (!cancelled && text) {
+        onTextResult?.(text)
+      }
+      return
+    }
 
     const recorder = mediaRecorderRef.current
     if (!recorder || recorder.state !== 'recording') {

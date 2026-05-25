@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface DataSource {
@@ -22,6 +23,8 @@ const typeLabels: Record<string, string> = {
 }
 
 export default function SettingsPage() {
+  const router = useRouter()
+  const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [dataSources, setDataSources] = useState<DataSource[]>([])
 
@@ -50,6 +53,12 @@ export default function SettingsPage() {
 
     fetchSettings()
   }, [])
+
+  async function handleSignOut() {
+    if (!window.confirm('确定退出登录？')) return
+    await supabase.auth.signOut()
+    router.replace('/auth/login')
+  }
 
   function formatSyncTime(iso: string | null) {
     if (!iso) return '从未同步'
@@ -190,13 +199,14 @@ export default function SettingsPage() {
                 📥 导入学习数据
               </button>
               <button
-                onClick={() => alert('重置功能开发中，敬请期待')}
-                className="w-full text-left p-4 rounded-xl transition-colors cursor-pointer" style={{
+                onClick={handleSignOut}
+                className="w-full text-left p-4 rounded-xl transition-colors cursor-pointer"
+                style={{
                   color: '#3A2E2C',
                   backgroundColor: 'rgba(255,255,255,0.4)',
                 }}
               >
-                🔄 重置学习进度
+                🚪 退出登录
               </button>
             </div>
           </div>

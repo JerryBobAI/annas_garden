@@ -27,19 +27,10 @@ export default function LoginPage() {
         if (error) throw error
         setError('注册成功！请查看邮箱确认链接。')
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
 
-        const userId = data.user?.id
-        const { data: profile } = userId
-          ? await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', userId)
-            .single()
-          : { data: null }
-
-        const defaultPath = profile?.role === 'parent' ? '/parent' : '/child'
+        const defaultPath = '/child'
         const redirectTo = new URLSearchParams(window.location.search).get('redirectTo')
         const targetPath = redirectTo?.startsWith('/') && !redirectTo.startsWith('//')
           ? redirectTo
