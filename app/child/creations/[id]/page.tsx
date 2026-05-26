@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 import { createClient } from '@/lib/supabase/client'
 import type { Creation, CreationPage } from '@/types'
 import WordCard from '@/components/child/word-card'
@@ -54,9 +55,7 @@ export default function CreationDetailPage() {
     return (
       <div className="container mx-auto px-4 pt-8 text-center">
         <p className="text-muted-brown">找不到这个创作 😥</p>
-        <Link href="/child/creations" className="text-amber-accent mt-4 inline-block">
-          ← 返回创作列表
-        </Link>
+        <BackIconLink href="/child/creations" label="返回创作列表" className="mt-4" />
       </div>
     )
   }

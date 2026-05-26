@@ -24,7 +24,7 @@ export function useSecretHomeLongPress() {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     clear()
     timerRef.current = setTimeout(() => {
-      router.push('/parent')
+      router.push('/parent/verify?redirectTo=%2Fparent')
     }, LONG_PRESS_MS)
   }
 

@@ -369,3 +369,155 @@ export interface OnboardingState {
   display_name?: string
   avatar_url?: string
 }
+
+// ============================================
+// Phase 4: 智能引擎 + 家长洞察类型
+// ============================================
+
+// 知识图谱关系类型
+export type KnowledgeRelation = 'prerequisite' | 'related' | 'includes'
+
+// 报告类型
+export type ReportType = 'weekly' | 'monthly' | 'milestone'
+
+// 导入类型
+export type ImportType = 'text' | 'pdf' | 'image'
+
+// 知识图谱边（数据库行）
+export interface KnowledgeGraphEdge {
+  id: string
+  subject: Subject
+  from_point: string
+  to_point: string
+  relation_type: KnowledgeRelation
+  weight: number
+}
+
+// 知识图谱节点（视图层，聚合计算）
+export interface KnowledgeNode {
+  point: string
+  subject: Subject
+  mastery_level: number           // 0-100, 来自 knowledge_mastery
+  prerequisites: string[]
+  dependents: string[]
+  is_ready: boolean               // 前置全部达标
+  recommended: boolean            // 系统推荐下一步学习
+}
+
+// AI 学习报告
+export interface LearningReport {
+  id: string
+  child_id: string
+  report_type: ReportType
+  period_start: string
+  period_end: string
+  content: ReportContent
+  ai_summary?: string
+  ai_suggestions?: string[]
+  created_at: string
+}
+
+// 报告结构化内容
+export interface ReportContent {
+  // 学习概览
+  overview: {
+    total_conversations: number
+    total_duration_minutes: number
+    mode_distribution: Record<string, number>
+    subject_distribution: Record<string, number>
+  }
+  // 兴趣追踪
+  interests: {
+    top_topics: { topic: string; count: number; trend: 'up' | 'down' | 'stable' }[]
+    curiosity_seeds_count: number
+    new_explorations: string[]
+  }
+  // 知识掌握
+  mastery: {
+    by_subject: {
+      subject: Subject
+      overall_level: number
+      improved: string[]
+      struggling: string[]
+    }[]
+    mastery_changes: { point: string; before: number; after: number }[]
+  }
+  // 创作活动
+  creations: {
+    total: number
+    by_type: Record<string, number>
+    highlights: string[]
+  }
+  // 花园成长
+  garden: {
+    new_plants: number
+    blooming: number
+    total_plants: number
+  }
+}
+
+// 难度调整记录
+export interface DifficultyChange {
+  id: string
+  child_id: string
+  subject: Subject
+  knowledge_point: string
+  old_difficulty: number
+  new_difficulty: number
+  reason: string
+  conversation_id?: string
+  created_at: string
+}
+
+// 内容导入
+export interface ContentImport {
+  id: string
+  parent_id: string
+  import_type: ImportType
+  original_content?: string
+  file_url?: string
+  extracted_knowledge: {
+    knowledge_points: string[]
+    subject: Subject
+    suggested_goals: string[]
+  }
+  linked_goals: string[]
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  created_at: string
+}
+
+// 花园区域
+export interface GardenArea {
+  id: string
+  child_id: string
+  area_name: string
+  area_type: 'default' | 'unlockable'
+  subject?: Subject
+  is_unlocked: boolean
+  unlock_condition: Record<string, number>
+  position_x: number
+  position_y: number
+  width: number
+  height: number
+  created_at: string
+}
+
+// 自适应难度配置
+export interface AdaptiveDifficultyConfig {
+  correct_streak_to_increase: number    // 默认 3
+  wrong_streak_to_decrease: number      // 默认 2
+  min_difficulty: number                // 1
+  max_difficulty: number                // 5
+  step_size: number                     // 1
+}
+
+// 学习推荐卡片
+export interface LearningRecommendation {
+  knowledge_point: string
+  subject: Subject
+  suggested_mode: LearningMode
+  current_mastery: number
+  target_mastery: number
+  estimated_minutes: number
+  reason: string
+}

@@ -9,6 +9,7 @@ import ModeCard from '@/components/child/mode-card'
 import { FairySecretHomeWrap } from '@/components/child/fairy-secret-home'
 import { AccountSecretSwitchWrap } from '@/components/child/account-secret-switch'
 import { staggerContainer, fadeInUp, springGentle } from '@/lib/animations'
+import type { LearningRecommendation } from '@/types'
 
 /**
  * 时段问候语（复用原有逻辑）
@@ -23,6 +24,13 @@ function getGreeting(): { emoji: string; text: string } {
   return { emoji: '🌙', text: '晚上好' }
 }
 
+/** 学科对应的 emoji 和中文名 */
+const SUBJECT_INFO: Record<string, { emoji: string; label: string }> = {
+  chinese: { emoji: '📖', label: '语文' },
+  math: { emoji: '🔢', label: '数学' },
+  english: { emoji: '🔤', label: '英语' },
+}
+
 export default function ChildHomePage() {
   const supabase = createClient()
   const router = useRouter()
@@ -30,6 +38,7 @@ export default function ChildHomePage() {
   const [streakDays, setStreakDays] = useState(0)
   const [totalConversations, setTotalConversations] = useState(0)
   const [gardenPlants, setGardenPlants] = useState(0)
+  const [recommendations, setRecommendations] = useState<LearningRecommendation[]>([])
 
   const greeting = getGreeting()
 
@@ -84,6 +93,19 @@ export default function ChildHomePage() {
             }
           }
           setStreakDays(streak)
+        }
+
+        // Phase 4: 获取 AI 推荐
+        try {
+          const recRes = await fetch('/api/recommendations')
+          if (recRes.ok) {
+            const recData = await recRes.json()
+            if (!cancelled && recData.recommendations) {
+              setRecommendations(recData.recommendations)
+            }
+          }
+        } catch {
+          // 推荐加载失败不影响主流程
         }
       } catch (error) {
         console.error('Error fetching child data:', error)
@@ -163,6 +185,61 @@ export default function ChildHomePage() {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Phase 4: AI 推荐任务 */}
+      {recommendations.length > 0 && (
+        <div className="container mx-auto px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4 text-primary-dark">
+            🧚 精灵推荐
+          </h2>
+          <motion.div
+            className="space-y-3"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {recommendations.map((rec, i) => {
+              const info = SUBJECT_INFO[rec.subject] || { emoji: '📚', label: rec.subject }
+              return (
+                <motion.div
+                  key={`${rec.subject}-${rec.knowledge_point}`}
+                  variants={fadeInUp}
+                  transition={{ ...springGentle, delay: i * 0.1 }}
+                >
+                  <Link
+                    href={`/child/chat?mode=${rec.suggested_mode}&subject=${rec.subject}&topic=${encodeURIComponent(rec.knowledge_point)}`}
+                    className="block"
+                  >
+                    <div className="card rounded-soft p-4 flex items-center gap-4 hover:translate-y-[-2px] transition-transform">
+                      <div className="text-3xl">{info.emoji}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-primary-dark truncate">
+                          {rec.knowledge_point}
+                        </div>
+                        <div className="text-xs text-muted-brown mt-1">
+                          {info.label} · 掌握 {rec.current_mastery}% · 约 {rec.estimated_minutes} 分钟
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+                          style={{
+                            backgroundColor: rec.current_mastery < 30 ? 'rgba(239,68,68,0.1)' :
+                              rec.current_mastery < 60 ? 'rgba(255,179,0,0.15)' : 'rgba(34,197,94,0.1)',
+                            color: rec.current_mastery < 30 ? '#ef4444' :
+                              rec.current_mastery < 60 ? '#d97706' : '#16a34a',
+                          }}
+                        >
+                          {rec.current_mastery}%
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        </div>
+      )}
 
       {/* 本周统计 */}
       <div className="container mx-auto px-4 mb-8">

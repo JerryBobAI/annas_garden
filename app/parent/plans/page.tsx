@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 import { createClient } from '@/lib/supabase/client'
+import type { LearningRecommendation } from '@/types'
 
 interface StudyPlan {
   id: string
@@ -41,10 +43,32 @@ export default function PlansPage() {
   const [activePlan, setActivePlan] = useState<StudyPlan | null>(null)
   const [weekSchedules, setWeekSchedules] = useState<DaySchedule[]>([])
   const [weekLabel, setWeekLabel] = useState('')
+  // Phase 4: AI 推荐任务
+  const [recommendations, setRecommendations] = useState<LearningRecommendation[]>([])
 
   useEffect(() => {
     async function fetchPlans() {
       const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+
+      // 定位孩子 ID
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      let childId = user.id
+      if (profile?.role === 'parent') {
+        const { data: children } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('parent_id', user.id)
+          .eq('role', 'child')
+          .limit(1)
+        if (children?.[0]) childId = children[0].id
+      }
 
       // Fetch active study plan
       const { data: plans } = await supabase
@@ -104,7 +128,7 @@ export default function PlansPage() {
 
       setWeekSchedules(days)
 
-      // Calculate week number from active plan or just use date-based label
+      // Calculate week number
       if (plans && plans.length > 0) {
         const planStart = new Date(plans[0].start_date)
         const weekNum = Math.floor((now.getTime() - planStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
@@ -114,6 +138,15 @@ export default function PlansPage() {
         const weekOfMonth = Math.ceil(now.getDate() / 7)
         setWeekLabel(`${month}月第${weekOfMonth}周`)
       }
+
+      // Phase 4: 获取 AI 推荐
+      try {
+        const recRes = await fetch(`/api/recommendations?child_id=${childId}`)
+        if (recRes.ok) {
+          const recData = await recRes.json()
+          setRecommendations(recData.recommendations || [])
+        }
+      } catch { /* AI 推荐获取失败不影响主流程 */ }
 
       setLoading(false)
     }
@@ -134,20 +167,30 @@ export default function PlansPage() {
     english: '🔤',
   }
 
+  // 本周总完成率
+  const totalTasks = weekSchedules.reduce((s, d) => s + d.items.length, 0)
+  const completedTasks = weekSchedules.reduce((s, d) => s + d.items.filter(i => i.status === 'completed').length, 0)
+  const weekCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+
+  // 导航头组件
+  const navHeader = (
+    <div className="card rounded-soft p-4 mb-8">
+      <div className="flex items-center justify-between content-z">
+        <BackIconLink href="/parent" label="返回家长中心" />
+        <div className="text-center">
+          <h1 className="text-lg font-bold" style={{ color: '#3A2E2C' }}>📅 学习计划</h1>
+          <p className="text-xs" style={{ color: '#8B7355' }}>计划安排 + AI 推荐</p>
+        </div>
+        <div className="w-10" />
+      </div>
+    </div>
+  )
+
   if (loading) {
     return (
       <main className="min-h-screen watercolor-bg">
         <div className="container mx-auto px-4 py-8">
-          <div className="card rounded-soft p-4 mb-8">
-            <div className="flex items-center justify-between content-z">
-              <Link href="/parent" className="px-4 py-2 text-sm rounded-xl card border-soft hover:translate-y-0" style={{ color: '#3A2E2C' }}>← 返回</Link>
-              <div className="text-center">
-                <h1 className="text-lg font-bold" style={{ color: '#3A2E2C' }}>📅 学习计划</h1>
-                <p className="text-xs" style={{ color: '#8B7355' }}>安排每日任务</p>
-              </div>
-              <div className="w-16" />
-            </div>
-          </div>
+          {navHeader}
           <div className="text-center py-20" style={{ color: '#8B7355' }}>加载中...</div>
         </div>
       </main>
@@ -157,41 +200,86 @@ export default function PlansPage() {
   return (
     <main className="min-h-screen watercolor-bg">
       <div className="container mx-auto px-4 py-8">
-        {/* 导航 */}
-        <div className="card rounded-soft p-4 mb-8">
-          <div className="flex items-center justify-between content-z">
-            <Link href="/parent" className="px-4 py-2 text-sm rounded-xl card border-soft hover:translate-y-0" style={{ color: '#3A2E2C' }}>← 返回</Link>
-            <div className="text-center">
-              <h1 className="text-lg font-bold" style={{ color: '#3A2E2C' }}>📅 学习计划</h1>
-              <p className="text-xs" style={{ color: '#8B7355' }}>安排每日任务</p>
-            </div>
-            <div className="w-16" />
-          </div>
-        </div>
+        {navHeader}
 
-        {/* 当前计划信息 */}
-        {activePlan && (
-          <div className="card rounded-soft p-6 mb-6 animate-card-enter">
-            <div className="content-z">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-bold" style={{ color: '#3A2E2C' }}>
-                  📋 {activePlan.title}
-                </h2>
+        {/* 当前计划信息 + 本周统计 */}
+        <div className="card rounded-soft p-6 mb-6 animate-card-enter">
+          <div className="content-z">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-bold" style={{ color: '#3A2E2C' }}>
+                📋 {activePlan?.title || '本周学习'}
+              </h2>
+              {activePlan && (
                 <span className="px-3 py-1 text-xs rounded-full" style={{
                   backgroundColor: 'rgba(34,197,94,0.1)',
                   color: '#16a34a',
                 }}>
                   进行中
                 </span>
+              )}
+            </div>
+            <p className="text-sm mb-4" style={{ color: '#8B7355' }}>
+              {activePlan ? `${activePlan.start_date} ~ ${activePlan.end_date} · ${weekLabel}` : weekLabel}
+            </p>
+            {/* 本周完成概览 */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-2 rounded-xl" style={{ backgroundColor: 'rgba(255,179,0,0.06)' }}>
+                <div className="text-xl font-bold" style={{ color: '#FFB300' }}>{totalTasks}</div>
+                <div className="text-xs" style={{ color: '#8B7355' }}>总任务</div>
               </div>
-              <p className="text-sm" style={{ color: '#8B7355' }}>
-                {activePlan.start_date} ~ {activePlan.end_date} · {weekLabel}
+              <div className="text-center p-2 rounded-xl" style={{ backgroundColor: 'rgba(34,197,94,0.06)' }}>
+                <div className="text-xl font-bold" style={{ color: '#16a34a' }}>{completedTasks}</div>
+                <div className="text-xs" style={{ color: '#8B7355' }}>已完成</div>
+              </div>
+              <div className="text-center p-2 rounded-xl" style={{ backgroundColor: 'rgba(139,115,85,0.06)' }}>
+                <div className="text-xl font-bold" style={{ color: '#3A2E2C' }}>{weekCompletionRate}%</div>
+                <div className="text-xs" style={{ color: '#8B7355' }}>完成率</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Phase 4: AI 推荐任务 */}
+        {recommendations.length > 0 && (
+          <div className="card rounded-soft p-6 mb-6 animate-card-enter" style={{ borderLeft: '4px solid #FFB300' }}>
+            <div className="content-z">
+              <h3 className="text-base font-bold mb-3" style={{ color: '#3A2E2C' }}>
+                🧠 AI 推荐补充任务
+              </h3>
+              <p className="text-xs mb-3" style={{ color: '#8B7355' }}>
+                基于知识图谱分析，以下知识点建议加入学习计划
               </p>
+              <div className="space-y-2">
+                {recommendations.map((rec, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: 'rgba(255,179,0,0.05)' }}>
+                    <span className="text-lg">{subjectIcons[rec.subject] || '📘'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium" style={{ color: '#3A2E2C' }}>{rec.knowledge_point}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs" style={{ color: '#8B7355' }}>
+                          掌握 {rec.current_mastery}% → 目标 {rec.target_mastery}%
+                        </span>
+                        <span className="text-xs" style={{ color: '#d97706' }}>
+                          ≈{rec.estimated_minutes}分钟
+                        </span>
+                      </div>
+                      <p className="text-xs mt-0.5" style={{ color: '#8B7355' }}>{rec.reason}</p>
+                    </div>
+                    <Link
+                      href={`/child/chat?mode=${rec.suggested_mode}&subject=${rec.subject}&topic=${rec.knowledge_point}`}
+                      className="text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap"
+                      style={{ backgroundColor: 'rgba(255,179,0,0.15)', color: '#d97706' }}
+                    >
+                      去学习
+                    </Link>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* 本周计划 */}
+        {/* 本周日历视图 */}
         <div className="card rounded-soft p-6 mb-6">
           <div className="content-z">
             <h2 className="text-xl font-bold mb-4" style={{ color: '#3A2E2C' }}>
@@ -292,11 +380,16 @@ export default function PlansPage() {
         </div>
 
         {/* 无计划提示 */}
-        {!activePlan && (
+        {!activePlan && totalTasks === 0 && (
           <div className="card rounded-soft p-8">
             <div className="content-z text-center">
+              <div className="text-4xl mb-3">📋</div>
               <p className="mb-2" style={{ color: '#3A2E2C' }}>暂无活跃的学习计划</p>
-              <p className="text-sm" style={{ color: '#8B7355' }}>请先创建学习计划以安排每日任务</p>
+              <p className="text-sm" style={{ color: '#8B7355' }}>
+                {recommendations.length > 0
+                  ? '可以参考上方 AI 推荐的知识点开始学习'
+                  : '请先创建学习计划以安排每日任务'}
+              </p>
             </div>
           </div>
         )}

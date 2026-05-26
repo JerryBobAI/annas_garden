@@ -68,12 +68,16 @@ export async function updateSession(request: NextRequest) {
 
     const role = profile?.role
 
-    // child 用户不能访问 /parent/*
+    // child 用户经 PIN 验证后可进入家长区（同设备家长入口）
     if (role === 'child' && pathname.startsWith('/parent')) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/child'
-      url.search = ''
-      return NextResponse.redirect(url)
+      const verified = isParentVerified(request, user.id)
+      if (!isParentVerificationPath(pathname) && !verified) {
+        const url = request.nextUrl.clone()
+        url.pathname = PARENT_VERIFY_PATH
+        url.search = ''
+        url.searchParams.set('redirectTo', `${pathname}${request.nextUrl.search}`)
+        return NextResponse.redirect(url)
+      }
     }
 
     // 家长区需要额外 PIN 验证，避免孩子只知道登录密码就进入家长端。

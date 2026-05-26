@@ -88,6 +88,7 @@ function ChatPageInner() {
   const savedSubject = typeof window !== 'undefined' ? localStorage.getItem('lastCreateSubject') : null
   const subject = mode === 'create' ? (rawSubject || savedSubject || 'chinese') : rawSubject
   const initialConvId = searchParams.get('conversationId') || undefined
+  const topic = searchParams.get('topic')?.trim() || undefined
 
   // 创造模式下使用学科级配置，否则用模式级配置
   const configKey = mode === 'create' && subject ? `create:${subject}` : mode
@@ -100,6 +101,7 @@ function ChatPageInner() {
   const [voiceNotice, setVoiceNotice] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const prevMsgCountRef = useRef(0)
+  const topicSentRef = useRef<string | null>(null)
 
   // 记住最后使用的模式和学科
   useEffect(() => {
@@ -128,6 +130,29 @@ function ChatPageInner() {
     clearError,
   } = useFairyChat(mode, subject, initialConvId)
 
+  // 从首页推荐进入时，自动发起对应知识点的学习
+  useEffect(() => {
+    if (!topic || isLoading || isStreaming || messages.length > 0) return
+
+    const key = `${mode}:${subject || ''}:${topic}`
+    if (topicSentRef.current === key) return
+    topicSentRef.current = key
+
+    const prompt =
+      mode === 'quest'
+        ? `请帮我练习「${topic}」相关的题目`
+        : mode === 'create'
+          ? `我想创作和「${topic}」有关的内容`
+          : `我想了解「${topic}」`
+
+    void send(prompt)
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('topic')
+    const query = params.toString()
+    router.replace(query ? `/child/chat?${query}` : '/child/chat', { scroll: false })
+  }, [topic, mode, subject, isLoading, isStreaming, messages.length, send, router, searchParams])
+
   useEffect(() => {
     let cancelled = false
     async function loadVoiceProvider() {
@@ -154,7 +179,7 @@ function ChatPageInner() {
   // 初始问候语 TTS（greeting 是纯 JSX，不在 messages 里，需单独朗读）
   // 依赖 isLoading + messages.length + config.greeting，切学科后 greeting 变化也能正确朗读
   useEffect(() => {
-    if (!isLoading && messages.length === 0 && config.greeting) {
+    if (!isLoading && messages.length === 0 && config.greeting && !topic) {
       const settings = getVoiceSettings()
       if (settings.autoPlay) {
         void (async () => {
@@ -169,7 +194,7 @@ function ChatPageInner() {
         })()
       }
     }
-  }, [isLoading, messages.length, config.greeting])
+  }, [isLoading, messages.length, config.greeting, topic])
 
   // AI 回复完成后自动播放 TTS
   useEffect(() => {

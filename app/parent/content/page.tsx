@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 import { createClient } from '@/lib/supabase/client'
 
 // ============================================
@@ -454,13 +455,7 @@ export default function ContentManagePage() {
         {/* 导航栏：左侧返回 / 居中标题 / 右侧占位 */}
         <div className="card rounded-soft p-4 mb-8">
           <div className="flex items-center justify-between">
-            <Link
-              href="/parent"
-              className="px-4 py-2 text-sm rounded-soft card border-soft hover:bg-white/90 transition-all"
-              style={{ color: '#3A2E2C' }}
-            >
-              ← 返回
-            </Link>
+            <BackIconLink href="/parent" label="返回家长中心" />
             <div className="text-center">
               <h1 className="text-2xl font-bold" style={{ color: '#3A2E2C' }}>
                 内容管理
@@ -469,7 +464,7 @@ export default function ContentManagePage() {
                 添加学习资料，支持手动录入、AI 识别和外部资源
               </p>
             </div>
-            <div className="w-24" />
+            <div className="w-10" />
           </div>
         </div>
 
@@ -486,6 +481,18 @@ export default function ContentManagePage() {
             {message.text}
           </div>
         )}
+
+        {/* Phase 4: AI 知识点导入入口 */}
+        <Link href="/parent/content/import">
+          <div className="card rounded-soft p-4 mb-6 flex items-center gap-3 hover:translate-y-[-1px] transition-transform" style={{ borderLeft: '4px solid #FFB300' }}>
+            <span className="text-2xl">🧠</span>
+            <div className="flex-1">
+              <div className="text-sm font-semibold" style={{ color: '#3A2E2C' }}>AI 智能知识点导入</div>
+              <div className="text-xs" style={{ color: '#8B7355' }}>粘贴课本内容或上传 PDF，AI 自动提取知识点并关联学习目标</div>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,179,0,0.1)', color: '#d97706' }}>新功能</span>
+          </div>
+        </Link>
 
         {/* 标签页切换 */}
         <div className="card rounded-soft p-2 mb-8 flex gap-2">

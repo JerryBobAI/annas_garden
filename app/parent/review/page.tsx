@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 import { createClient } from '@/lib/supabase/client'
 
 interface MaterialWithExercises {
@@ -133,18 +133,12 @@ export default function ReviewPage() {
         {/* 导航 */}
         <div className="card rounded-soft p-4 mb-8">
           <div className="flex items-center justify-between content-z">
-            <Link
-              href="/parent"
-              className="px-4 py-2 text-sm rounded-xl card border-soft hover:translate-y-0 transition-all"
-              style={{ color: '#3A2E2C' }}
-            >
-              ← 返回
-            </Link>
+            <BackIconLink href="/parent" label="返回家长中心" />
             <div className="text-center">
               <h1 className="text-lg font-bold" style={{ color: '#3A2E2C' }}>✅ 内容审核</h1>
-              <p className="text-xs" style={{ color: '#8B7355' }}>查看并审核学习内容</p>
+              <p className="text-xs" style={{ color: '#8B7355' }}>审核内容质量 · 知识点标注</p>
             </div>
-            <div className="w-16" />
+            <div className="w-10" />
           </div>
         </div>
 

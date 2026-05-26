@@ -7,6 +7,8 @@ import { estimateTokens, truncateHistory } from '@/lib/ai/token-manager'
 import { inferCreationType, getDefaultCoverEmoji } from '@/lib/ai/prompts-create'
 import { isEmptyCreationContent, mergeCreationContent } from '@/lib/ai/creation-save'
 import { applyGardenEvent, type GardenSupabaseClient } from '@/lib/garden/events'
+import { computeProfileUpdate, type ConversationData } from '@/lib/engine/cognitive-updater'
+import { calculateDifficultyAdjustment, inferDifficultyFromMastery } from '@/lib/engine/adaptive-difficulty'
 import { ChatRequest, Message, Subject } from '@/types'
 
 export async function POST(req: Request) {
@@ -341,6 +343,147 @@ export async function POST(req: Request) {
                 }
               }
             }
+          }
+        }
+
+        // ── Phase 4: 认知档案自动更新 ──
+        try {
+          // 获取对话开始时间计算时长
+          const { data: convData } = await supabase
+            .from('conversations')
+            .select('started_at')
+            .eq('id', conversationId)
+            .single()
+
+          const duration = convData?.started_at
+            ? Math.round((Date.now() - new Date(convData.started_at).getTime()) / 1000)
+            : 300 // 默认 5 分钟
+
+          const conversationDataForProfile: ConversationData = {
+            mode,
+            duration,
+            messageCount: 2,
+            knowledgeTags: newTags,
+            subject: subject as Subject | undefined,
+          }
+
+          // 获取认知档案
+          const { data: profile } = await supabase
+            .from('cognitive_profiles')
+            .select('attention_span_avg, total_conversations, total_messages')
+            .eq('child_id', user.id)
+            .single()
+
+          if (profile) {
+            // 获取最近 10 次对话模式
+            const { data: recentConvs } = await supabase
+              .from('conversations')
+              .select('mode')
+              .eq('child_id', user.id)
+              .order('started_at', { ascending: false })
+              .limit(10)
+
+            const recentModes = (recentConvs || []).map(c => c.mode)
+
+            // 获取最近 20 次对话的知识点标签
+            const { data: recentConvMeta } = await supabase
+              .from('conversations')
+              .select('metadata')
+              .eq('child_id', user.id)
+              .order('started_at', { ascending: false })
+              .limit(20)
+
+            const recentTags = (recentConvMeta || []).flatMap(c => {
+              const meta = c.metadata as Record<string, unknown> | null
+              return Array.isArray(meta?.knowledge_tags) ? meta.knowledge_tags as string[] : []
+            })
+
+            // 计算更新
+            const update = computeProfileUpdate(
+              profile,
+              conversationDataForProfile,
+              recentModes,
+              recentTags
+            )
+
+            await supabase
+              .from('cognitive_profiles')
+              .update({
+                preferred_mode: update.preferred_mode,
+                attention_span_avg: update.attention_span_avg,
+                interests: update.interests,
+                total_conversations: update.total_conversations,
+                total_messages: update.total_messages,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('child_id', user.id)
+          }
+        } catch (profileError) {
+          console.error('Failed to update cognitive profile:', profileError)
+        }
+
+        // ── Phase 4: 自适应难度（任务模式） ──
+        if (mode === 'quest' && subject && newTags.length > 0) {
+          try {
+            const primaryTag = newTags[0]
+
+            // 获取当前掌握度
+            const { data: mastery } = await supabase
+              .from('knowledge_mastery')
+              .select('mastery_level')
+              .eq('child_id', user.id)
+              .eq('subject', subject)
+              .eq('knowledge_point', primaryTag)
+              .single()
+
+            const currentDifficulty = commands.difficulty || inferDifficultyFromMastery(mastery?.mastery_level || 0)
+
+            // 获取最近的答题结果（从最近 5 次 quest 对话的 difficulty 推断）
+            const { data: recentQuests } = await supabase
+              .from('messages')
+              .select('structured_output')
+              .eq('conversation_id', conversationId!)
+              .eq('role', 'assistant')
+              .order('created_at', { ascending: true })
+
+            // 从 AI 的 difficulty 字段推断答题结果
+            // difficulty 存在且 > 0 表示有答题评估
+            const recentResults = (recentQuests || [])
+              .map(m => {
+                const so = m.structured_output as Record<string, unknown> | null
+                return so?.difficulty ? (so.difficulty as number) >= currentDifficulty : null
+              })
+              .filter((r): r is boolean => r !== null)
+
+            if (recentResults.length >= 2) {
+              const adjustment = calculateDifficultyAdjustment(currentDifficulty, recentResults)
+              if (adjustment) {
+                // 记录难度变化
+                await supabase.from('difficulty_history').insert({
+                  child_id: user.id,
+                  subject,
+                  knowledge_point: primaryTag,
+                  old_difficulty: currentDifficulty,
+                  new_difficulty: adjustment.newDifficulty,
+                  reason: adjustment.reason,
+                  conversation_id: conversationId,
+                })
+
+                // 更新掌握度（答对升+5，答错降-3）
+                if (mastery) {
+                  const delta = adjustment.newDifficulty > currentDifficulty ? 5 : -3
+                  const newLevel = Math.max(0, Math.min(100, (mastery.mastery_level || 0) + delta))
+                  await supabase
+                    .from('knowledge_mastery')
+                    .update({ mastery_level: newLevel, updated_at: new Date().toISOString() })
+                    .eq('child_id', user.id)
+                    .eq('subject', subject)
+                    .eq('knowledge_point', primaryTag)
+                }
+              }
+            }
+          } catch (difficultyError) {
+            console.error('Failed to adjust difficulty:', difficultyError)
           }
         }
       },

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 
 function VerifyShell({ children }: { children: React.ReactNode }) {
   return (
@@ -115,10 +115,8 @@ function ParentVerifyForm() {
           </button>
         </form>
 
-        <div className="text-center mt-5">
-          <Link href="/child" className="text-sm text-muted-brown">
-            ← 返回孩子花园
-          </Link>
+        <div className="flex justify-center mt-5">
+          <BackIconLink href="/child" label="返回孩子花园" />
         </div>
       </div>
     </VerifyShell>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
+import { BackIconLink } from '@/components/shared/back-icon-link'
 import { useRouter } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
@@ -118,11 +118,8 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* 返回首页 */}
-        <div className="text-center mt-4">
-          <Link href="/" className="text-sm" style={{ color: '#8B7355' }}>
-            ← 返回首页
-          </Link>
+        <div className="flex justify-center mt-4">
+          <BackIconLink href="/" label="返回首页" />
         </div>
       </div>
     </main>
