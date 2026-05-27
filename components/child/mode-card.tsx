@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { playTap } from '@/lib/sounds'
@@ -7,7 +8,7 @@ import { fadeInUp, springGentle } from '@/lib/animations'
 
 interface ModeCardProps {
   mode: 'explore' | 'quest' | 'create'
-  icon: string                    // emoji
+  icon: React.ReactNode           // SVG component or emoji string
   title: string                   // "探索"
   subtitle: string                // "问精灵" / "今日5题"
   href: string                    // /child/chat?mode=explore
@@ -48,7 +49,12 @@ export default function ModeCard({
       )}
       <Link href={href} onClick={() => playTap()} className="block">
         <div className="card rounded-soft p-6 text-center">
-          <div className="text-5xl mb-3">{icon}</div>
+          <div className="flex justify-center mb-3">
+            {typeof icon === 'string'
+              ? <span className="text-5xl">{icon}</span>
+              : icon
+            }
+          </div>
           <div className="font-semibold mb-1 text-primary-dark">{title}</div>
           <div className="text-xs text-muted-brown">{subtitle}</div>
         </div>

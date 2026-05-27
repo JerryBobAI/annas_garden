@@ -180,6 +180,7 @@ export interface AIStructuredOutput {
   creation_complete?: boolean           // 创作是否完成
   illustration_prompt?: string          // 插画生成 prompt
   creation_id?: string                  // 已保存创作的 ID
+  image_url?: string                    // AI 生成的插画 URL（持久化）
 }
 
 // AI 对话会话

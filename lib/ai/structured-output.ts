@@ -143,6 +143,9 @@ function validateCommands(raw: Record<string, unknown>): AIStructuredOutput {
   if (typeof raw.creation_id === 'string' && raw.creation_id.trim()) {
     result.creation_id = raw.creation_id.trim()
   }
+  if (typeof raw.image_url === 'string' && raw.image_url.trim()) {
+    result.image_url = raw.image_url.trim()
+  }
 
   return result
 }

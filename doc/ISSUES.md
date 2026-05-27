@@ -1,14 +1,14 @@
 # Anna's Garden - 问题清单与架构审视
 
 > 最后更新：2026-05-27
-> 状态：Phase 1–4 全部完成；以下为历史债务与后续优化项
+> 状态：Phase 1–4 + 体验打磨 + 迭代功能全部完成；以下为历史债务与后续优化项
 
 ---
 
 ## Phase 1–4 综合验收记录（2026-05-27）
 
-- **143 单元测试全部通过**，`npm run build` 通过
-- **Lint**：0 error，2 warning（error.tsx 未使用参数 `_error` — Next.js 约定、content 页 `<img>`）
+- **188 单元测试 + 68 E2E 测试全部通过**，`npm run build` 通过，TypeScript 零错误
+- **Lint**：0 error，3 warning（error.tsx 未使用参数 `_error` ×2 — Next.js 约定、content 页 `<img>`）
 - §14 PU1–PU8 全部达标（见 `spec/PHASE4.md` §14.7）
 - PHASE1–4 验收清单已更新：已完成项全部标注 `[x]`
 - 审查修复：家长首页/计划页数据 scope、本地日期、URL 编码、开花植物字段、useState-in-effect lint 修复
@@ -20,12 +20,20 @@
 - ✅ PDF 导入 — pdf-parse v2 + /api/imports/upload + 文本/PDF tab 切换 UI
 - ✅ 定时报告生成机制 — report-scheduler + Vercel Cron + 按需触发
 
+### 已完成（2026-05-27 迭代）
+
+- ✅ 花园精灵动态头像 — SVG 矢量角色 + CSS 动画（呼吸/眨眼/腮红/叶子/星星）+ framer-motion 情绪切换
+- ✅ 艾宾浩斯复习调度 — 遗忘曲线引擎 + API + 精灵对话自然注入
+- ✅ V10 多模态图片生成 — LabNana/CogView/DALL-E 三 Provider + 对话中自动生成 + 安全过滤
+- ✅ RLS 收紧 — materials/content_schedules/data_sources/ai_recommendations 按角色+关联限制
+
+### 已完成（2026-05-27 E2E）
+
+- ✅ E2E 自动化测试 — Playwright 68 用例（认证/孩子端/家长端/API/移动端）+ GitHub Actions CI
+
 ### 待做项（优先级低，后续迭代）
 
-- RLS 收紧（materials/content_schedules 全局 SELECT → 按 child_id 限制）
-- 花园精灵动态头像（Lottie/SVG 帧动画）
-- 艾宾浩斯复习调度
-- E2E 自动化测试
+- Supabase Storage 接入（图片持久化）
 
 ---
 
@@ -48,7 +56,7 @@
 | T6 | 无全局状态管理 | 全局 | 每个页面独立 fetch，用户/会话状态无共享 |
 | T7 | shadcn/ui 利用率低 | `components/ui/` | 只用了 Button，大量 UI 手写（Card、Dialog、Sheet、Form 等都可用） |
 | T8 | 样式双轨制 | `globals.css` + `lib/styles.ts` | CSS 工具类和 JS 样式常量并存，维护成本高 |
-| T9 | ~~无测试~~ | `__tests__/` 16 个文件 | ✅ **已解决** — 143 单元测试，E2E 待做 |
+| T9 | ~~无测试~~ | `__tests__/` 17 个文件 | ✅ **已解决** — 166 单元测试，E2E 待做 |
 | T10 | 内联 style 对象 | `app/page.tsx` 等 | 部分页面仍有 `style={{ color: '#3A2E2C' }}`，与 CSS 类重复 |
 
 ### 🟢 低优先级
@@ -67,10 +75,12 @@
 ### 当前架构
 
 ```
-用户 → Next.js (CSR Pages) → API Routes → Supabase (PostgreSQL + Auth)
-                                              ↓
-                                         RLS 安全策略
+用户 → Next.js (SSR + CSR 混合) → API Routes → Supabase (PostgreSQL + Auth)
+                                                    ↓
+                                               RLS 安全策略
 ```
+
+> ℹ️ 注：以下 A1–A4 是 Phase 0 规划时的架构审视记录，大部分已在 Phase 1–4 中解决。
 
 ### 核心判断：**架构能力不匹配产品愿景**
 
@@ -214,8 +224,8 @@ AI 原生教育平台应该**放大这些天赋**，而不是用题库压制它�
 | # | 决策 | 结论 | 理由 |
 |---|------|------|------|
 | D1 | 产品方向 | **B. 转向 AI 原生教育** | 花园精灵陪伴式学习，三种模式：探索/任务/创造 |
-| D2 | AI 提供商 | **OpenAI 为主** | 全栈能力（GPT-4o + Whisper + TTS + Vision），Vercel AI SDK 保留切换能力 |
-| D3 | 语音方案 | **Whisper API 为主** | 儿童语音识别更准，iPad Safari 兼容性好，$1.8/月可接受 |
+| D2 | AI 提供商 | **智谱 GLM-4 为默认**（实际执行） | 通过 OpenAI 兼容接口接入，成本更低；OpenAI 保留可切换 |
+| D3 | 语音方案 | **SiliconFlow 为默认**（实际执行） | SenseVoice STT + CosyVoice2 TTS，浏览器 Web Speech 作为零成本兜底 |
 | D4 | 当前功能去留 | **孩子端完全重写，家长端渐进改造** | 孩子端 1843 行，UI 范式完全不同（选择题→聊天），重写比重构更快更干净；家长端保留并扩展 |
 | D5 | 目标用户扩展 | **当前纯个人，未来可能开放** | 不做多租户，Supabase Auth + RLS 天然支持扩展 |
 | D6 | 家长/孩子端切换 | **孩子端为主 + 家长隐蔽入口** | 登录后直接进孩子端；长按精灵头像 3 秒 → PIN 验证 → 家长端覆盖层；返回时无缝恢复孩子端进度 |

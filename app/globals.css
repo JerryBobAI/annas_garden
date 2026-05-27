@@ -652,10 +652,81 @@ nav a:active {
   animation: shakeFast 0.3s ease both;
 }
 
+/* ============================================
+ * 精灵角色动画（SVG 面部）
+ * ============================================ */
+
+/* 呼吸浮动 — idle 状态轻微上下浮动 */
+.fairy-breathing {
+  animation: fairyFloat 3s ease-in-out infinite;
+}
+
+@keyframes fairyFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* 眨眼动画 — 每 4 秒眨一次 */
+.fairy-eyes {
+  animation: fairyBlink 4s ease-in-out infinite;
+}
+
+@keyframes fairyBlink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+/* 腮红微微呼吸 */
+.fairy-blush {
+  animation: blushPulse 3s ease-in-out infinite;
+}
+
+@keyframes blushPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.35; }
+}
+
+/* 叶子微风摇晃 */
+.fairy-leaf {
+  animation: leafSway 2.5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+@keyframes leafSway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); }
+}
+
+/* 欢呼星星闪烁 */
+.fairy-sparkles .sparkle-1 {
+  animation: sparklePop 0.8s ease-in-out infinite alternate;
+}
+.fairy-sparkles .sparkle-2 {
+  animation: sparklePop 0.8s ease-in-out 0.3s infinite alternate;
+}
+.fairy-sparkles .sparkle-3 {
+  animation: sparklePop 0.8s ease-in-out 0.6s infinite alternate;
+}
+
+@keyframes sparklePop {
+  0% { opacity: 0.4; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
 /* 无障碍：framer-motion 也需要尊重 reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   [style*="transform"],
   [style*="opacity"] {
     transition: none !important;
+  }
+  .fairy-breathing,
+  .fairy-eyes,
+  .fairy-blush,
+  .fairy-leaf,
+  .fairy-sparkles .sparkle-1,
+  .fairy-sparkles .sparkle-2,
+  .fairy-sparkles .sparkle-3 {
+    animation: none !important;
   }
 }

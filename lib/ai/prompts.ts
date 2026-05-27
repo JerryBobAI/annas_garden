@@ -49,7 +49,8 @@ export const STRUCTURED_OUTPUT_INSTRUCTION = `
     "knowledge_tags": ["知识点1"],
     "difficulty": 1,
     "garden_event": null,
-    "next_mode": null
+    "next_mode": null,
+    "illustration_prompt": null
   }
 }
 
@@ -59,7 +60,8 @@ rules for commands:
 - knowledge_tags: 可选，本次回复涉及的知识点
 - difficulty: 可选，1-5，当前内容难度
 - garden_event: 可选，"seed_planted"（孩子提了新问题）、"sprout"（有进步）、"bloom"（完全掌握）、null
-- next_mode: 可选，建议切换的模式，通常为 null`
+- next_mode: 可选，建议切换的模式，通常为 null
+- illustration_prompt: 可选，当孩子请求画画/画图/生成图片时，写一段英文画面描述（50词以内），系统会自动生成插图。只在孩子明确要求画画时才填写，平时为 null`
 
 /**
  * 探索模式 prompt
@@ -75,6 +77,7 @@ export function getExplorePrompt(): string {
 4. 把知识和孩子的生活经验联系起来
 5. 如果问题涉及特定学科，标记 knowledge_tags
 6. 孩子提出新问题时，设 garden_event 为 "seed_planted"
+7. 如果孩子说「画」「图」「帮我画」等，在 commands.illustration_prompt 写简短英文画面描述
 
 ${STRUCTURED_OUTPUT_INSTRUCTION}`
 }

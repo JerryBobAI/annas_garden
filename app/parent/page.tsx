@@ -26,28 +26,15 @@ export default function ParentPage() {
       const user = await getClientUser()
       if (!user) { return }
 
-      // 判断角色并定位孩子 ID
+      // 单账号模型：childId 就是当前用户
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, display_name')
+        .select('display_name')
         .eq('id', user.id)
         .single()
 
-      let childId = user.id
-      let childName = profile?.display_name || '小朋友'
-
-      if (profile?.role === 'parent') {
-        const { data: children } = await supabase
-          .from('profiles')
-          .select('id, display_name')
-          .eq('parent_id', user.id)
-          .eq('role', 'child')
-          .limit(1)
-        if (children?.[0]) {
-          childId = children[0].id
-          childName = children[0].display_name || '小朋友'
-        }
-      }
+      const childId = user.id
+      const childName = profile?.display_name || '小朋友'
 
       // 并行查询实时数据
       const weekAgo = new Date()

@@ -1,6 +1,7 @@
 import { streamText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createClient } from '@/lib/supabase/server'
+import { getGlmOpenAiBaseUrl } from '@/lib/ai/glm-config'
 import { getSystemPrompt } from '@/lib/ai/prompts'
 import { parseAIResponse } from '@/lib/ai/structured-output'
 import { estimateTokens, truncateHistory } from '@/lib/ai/token-manager'
@@ -9,7 +10,83 @@ import { isEmptyCreationContent, mergeCreationContent } from '@/lib/ai/creation-
 import { applyGardenEvent, type GardenSupabaseClient } from '@/lib/garden/events'
 import { computeProfileUpdate, type ConversationData } from '@/lib/engine/cognitive-updater'
 import { calculateDifficultyAdjustment, inferDifficultyFromMastery } from '@/lib/engine/adaptive-difficulty'
-import { ChatRequest, Message, Subject } from '@/types'
+import { getReviewSchedule, getReviewPromptInjection } from '@/lib/engine/spaced-repetition'
+import { ChatRequest, Message, Subject, KnowledgeMastery } from '@/types'
+
+function extractAiErrorInfo(err: unknown): { message: string; statusCode?: number } {
+  const parts: string[] = []
+  let statusCode: number | undefined
+
+  const visit = (value: unknown, depth = 0) => {
+    if (depth > 5 || value == null) return
+
+    if (typeof value === 'string') {
+      parts.push(value)
+      return
+    }
+
+    if (value instanceof Error) {
+      parts.push(value.message)
+      // AI SDK 的 AI_APICallError 继承 Error 但带有 statusCode/responseBody 等属性
+      const errObj = value as Error & { statusCode?: number; responseBody?: string; cause?: unknown; data?: unknown }
+      if (typeof errObj.statusCode === 'number') statusCode = errObj.statusCode
+      if (typeof errObj.responseBody === 'string') parts.push(errObj.responseBody)
+      if (errObj.data) visit(errObj.data, depth + 1)
+      visit(errObj.cause, depth + 1)
+      return
+    }
+
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>
+      if (typeof obj.statusCode === 'number') statusCode = obj.statusCode
+      if (typeof obj.message === 'string') parts.push(obj.message)
+      if (typeof obj.responseBody === 'string') parts.push(obj.responseBody)
+      if (obj.lastError) visit(obj.lastError, depth + 1)
+      if (Array.isArray(obj.errors)) obj.errors.forEach(item => visit(item, depth + 1))
+      if (obj.data) visit(obj.data, depth + 1)
+      if (obj.error) visit(obj.error, depth + 1)
+    }
+  }
+
+  visit(err)
+  return { message: parts.join(' '), statusCode }
+}
+
+function mapAiProviderError(err: unknown): Response {
+  const { message, statusCode } = extractAiErrorInfo(err)
+
+  if (
+    statusCode === 429 ||
+    message.includes('rate_limit') ||
+    message.includes('429') ||
+    message.includes('速率限制') ||
+    message.includes('访问量过大') ||
+    message.includes('"code":"1302"') ||
+    message.includes('"code":"1305"') ||
+    message.includes('1302') ||
+    message.includes('1305')
+  ) {
+    return Response.json(
+      { error: '精灵需要休息一下，稍后再试' },
+      { status: 429 },
+    )
+  }
+  if (statusCode === 401 || message.includes('api_key') || message.includes('401')) {
+    return Response.json({ error: '花园和外面断开了' }, { status: 500 })
+  }
+  if (statusCode === 500 || message.includes('网络错误')) {
+    return Response.json(
+      { error: '精灵和外面连得不太稳，请稍后再试' },
+      { status: 502 },
+    )
+  }
+
+  return Response.json(
+    { error: '精灵遇到了一点小问题，请再试一次' },
+    { status: 502 },
+  )
+}
+
 
 export async function POST(req: Request) {
   // 1. 认证
@@ -36,6 +113,13 @@ export async function POST(req: Request) {
 
   if (!['explore', 'quest', 'create'].includes(mode)) {
     return Response.json({ error: '无效的学习模式' }, { status: 400 })
+  }
+
+  if (!process.env.GLM_API_KEY) {
+    return Response.json(
+      { error: '请先在 .env.local 中配置 GLM_API_KEY' },
+      { status: 500 },
+    )
   }
 
   try {
@@ -70,48 +154,93 @@ export async function POST(req: Request) {
       conversationId = conv.id
     }
 
-    // 4. 构建 prompt
-    const systemPrompt = getSystemPrompt(mode, subject)
+    // 4. 构建 prompt（含复习注入）
+    let systemPrompt = getSystemPrompt(mode, subject)
+
+    // 艾宾浩斯复习注入：新对话开始时，查询需要复习的知识点
+    if (!conversation_id && (mode === 'quest' || mode === 'explore')) {
+      try {
+        const { data: masteryData } = await supabase
+          .from('knowledge_mastery')
+          .select('*')
+          .eq('child_id', user.id)
+
+        if (masteryData && masteryData.length > 0) {
+          const schedule = getReviewSchedule(
+            masteryData as KnowledgeMastery[],
+            subject as Subject | undefined
+          )
+          const injection = getReviewPromptInjection(schedule)
+          if (injection) {
+            systemPrompt += '\n\n' + injection
+          }
+        }
+      } catch {
+        // 复习注入失败不影响对话
+      }
+    }
+
     const systemPromptTokens = estimateTokens(systemPrompt)
 
     // 截断历史消息以适应上下文窗口
     const truncatedHistory = truncateHistory(historyMessages, systemPromptTokens)
 
-    // 组装 AI SDK messages 格式
+    // 组装 AI SDK messages 格式（过滤空内容消息，避免 GLM 报参数错误）
+    // 注意：assistant 历史消息只发纯文本，不发 JSON 包装，兼容 glm-4.7 等推理模型
     const aiMessages = [
-      ...truncatedHistory.map(m => ({
-        role: m.role as 'user' | 'assistant' | 'system',
-        content: m.role === 'assistant' && m.structured_output
-          // AI 的历史消息用完整 JSON 格式还原，保持对话连贯性
-          ? JSON.stringify({ text: m.content, commands: m.structured_output })
-          : m.content,
-      })),
+      ...truncatedHistory
+        .filter(m => m.content?.trim())
+        .map(m => ({
+          role: m.role as 'user' | 'assistant' | 'system',
+          content: m.content,
+        })),
       { role: 'user' as const, content: message },
     ]
 
-    // 5. 保存用户消息
+    // 5. 保存用户消息（避免重复：检查最后一条用户消息是否相同）
     const userTokens = estimateTokens(message)
-    await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      role: 'user',
-      content: message,
-      token_count: userTokens,
-    })
+    const { data: lastUserMsg } = await supabase
+      .from('messages')
+      .select('content')
+      .eq('conversation_id', conversationId)
+      .eq('role', 'user')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    // 只有当最后一条用户消息不同时才插入（防止重试导致重复）
+    if (!lastUserMsg || lastUserMsg.content !== message) {
+      await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        role: 'user',
+        content: message,
+        token_count: userTokens,
+      })
+    }
 
     // 6. 调用 OpenAI 流式生成
     // 使用智谱 GLM（OpenAI 兼容 Chat Completions API）
+    const glmModel = process.env.GLM_MODEL || 'glm-4.7-flash'
+    console.log('[Chat] Using GLM model:', glmModel)
     const glm = createOpenAI({
-      baseURL: process.env.GLM_BASE_URL + '/v4',
+      baseURL: getGlmOpenAiBaseUrl(),
       apiKey: process.env.GLM_API_KEY || '',
       name: 'glm',
     })
 
     const result = streamText({
-      model: glm.chat('glm-4.7-flash'),
+      model: glm.chat(glmModel),
       system: systemPrompt,
       messages: aiMessages,
+      maxRetries: 0,
+      timeout: 90_000,
+      onError({ error }) {
+        console.error('[Chat] GLM stream error:', error)
+      },
       onFinish: async ({ text }) => {
-        // 流结束后保存 AI 回复
+        // 流结束后保存 AI 回复；空文本说明是错误流，不入库
+        if (!text?.trim()) return
+
         const { text: parsedText, commands } = parseAIResponse(text)
         const aiTokens = estimateTokens(text)
 
@@ -489,34 +618,34 @@ export async function POST(req: Request) {
       },
     })
 
-    // 7. 返回流式响应，使用自定义 header 传递 conversation_id
-    return result.toTextStreamResponse({
+    // 7. 返回流式响应
+    // 先等待完整文本（非流式）；若为空说明 GLM 限流/出错，返回明确错误码
+    // 注意：这会牺牲"逐字显示"体验，但确保限流时能返回正确的错误而非空 200
+    let fullText: string
+    try {
+      fullText = await result.text
+    } catch (err) {
+      console.error('[Chat] streamText.text rejected:', err)
+      return mapAiProviderError(err)
+    }
+
+    if (!fullText?.trim()) {
+      console.warn('[Chat] Empty response from GLM, likely rate limited')
+      return Response.json(
+        { error: '精灵需要休息一下，稍后再试' },
+        { status: 429 },
+      )
+    }
+
+    // 正常返回纯文本（前端按 stream 方式逐 chunk 读，但这里一次性返回也兼容）
+    return new Response(fullText, {
       headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
         'X-Conversation-Id': conversationId!,
       },
     })
   } catch (err) {
     console.error('Chat API error:', err)
-
-    // 区分不同类型的错误
-    const errorMessage = err instanceof Error ? err.message : String(err)
-
-    if (errorMessage.includes('rate_limit') || errorMessage.includes('429')) {
-      return Response.json(
-        { error: '精灵需要休息一下，稍后再试' },
-        { status: 429 }
-      )
-    }
-    if (errorMessage.includes('api_key') || errorMessage.includes('401')) {
-      return Response.json(
-        { error: '花园和外面断开了' },
-        { status: 500 }
-      )
-    }
-
-    return Response.json(
-      { error: '精灵遇到了一点小问题，请再试一次' },
-      { status: 500 }
-    )
+    return mapAiProviderError(err)
   }
 }

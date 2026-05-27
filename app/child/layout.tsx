@@ -5,17 +5,26 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { playNavigate } from '@/lib/sounds'
 import { stopAllAudio } from '@/lib/audio-player'
+import { IconHome, IconChat, IconGarden, IconStar } from '@/components/icons/nav-icons'
 
 /**
  * 底部导航栏项目配置
  * Phase 1: 首页、学习(对话)、花园、成就
  */
 const NAV_ITEMS = [
-  { icon: '🏠', label: '首页', href: '/child' },
-  { icon: '💬', label: '学习', href: '/child/chat' },
-  { icon: '🌳', label: '花园', href: '/child/garden' },
-  { icon: '⭐', label: '成就', href: '/child/achievements' },
+  { icon: 'home', label: '首页', href: '/child' },
+  { icon: 'chat', label: '学习', href: '/child/chat' },
+  { icon: 'garden', label: '花园', href: '/child/garden' },
+  { icon: 'star', label: '成就', href: '/child/achievements' },
 ]
+
+/** 导航图标映射 */
+const NAV_ICON_MAP: Record<string, React.FC<{ size?: number; active?: boolean }>> = {
+  home: IconHome,
+  chat: IconChat,
+  garden: IconGarden,
+  star: IconStar,
+}
 
 /**
  * Loading 骨架屏
@@ -64,7 +73,9 @@ function BottomNav() {
                 onClick={() => playNavigate()}
                 className="flex flex-col items-center justify-center flex-1 touch-target"
               >
-                <div className="text-2xl mb-1">{item.icon}</div>
+                <div className="mb-1">
+                  {React.createElement(NAV_ICON_MAP[item.icon], { size: 26, active: isActive })}
+                </div>
                 <div
                   className="text-xs font-medium"
                   style={{ color: isActive ? '#3A2E2C' : '#8B7355' }}
@@ -93,6 +104,7 @@ export default function ChildLayout({
 }) {
   const pathname = usePathname()
   const prevPathRef = useRef(pathname)
+  const isChatPage = pathname.startsWith('/child/chat')
 
   // 页面切换时停止所有正在播放的语音
   useEffect(() => {
@@ -103,9 +115,11 @@ export default function ChildLayout({
   }, [pathname])
 
   return (
-    <div className="min-h-screen watercolor-bg">
+    <div className={`watercolor-bg ${isChatPage ? 'h-dvh overflow-hidden' : 'min-h-screen'}`}>
       <Suspense fallback={<ChildLoading />}>
-        <main className="pb-32">
+        <main
+          className={isChatPage ? 'h-[calc(100dvh-64px)] overflow-hidden' : 'pb-16'}
+        >
           {children}
         </main>
       </Suspense>

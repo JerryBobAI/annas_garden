@@ -11,6 +11,8 @@ import OptionButtons from '@/components/child/option-buttons'
 import ChatInput from '@/components/child/chat-input'
 import { speakText, getVoiceSettings, stopAllAudio } from '@/lib/audio-player'
 import type { LearningMode, Subject } from '@/types'
+import { TabExplore, TabQuest, TabCreate } from '@/components/icons/nav-icons'
+import type { ReactNode } from 'react'
 
 /** 模式配置 */
 const MODE_CONFIG: Record<string, { label: string; icon: string; greeting: string }> = {
@@ -52,10 +54,10 @@ const MODE_CONFIG: Record<string, { label: string; icon: string; greeting: strin
  * URL: /child/chat?mode=explore&subject=math&conversationId=xxx
  */
 /** 模式 tab 列表 */
-const MODE_TABS: { mode: LearningMode; icon: string; label: string }[] = [
-  { mode: 'explore', icon: '🌿', label: '探索' },
-  { mode: 'quest', icon: '⚔️', label: '任务' },
-  { mode: 'create', icon: '✏️', label: '创造' },
+const MODE_TABS: { mode: LearningMode; icon: (color: string) => ReactNode; label: string }[] = [
+  { mode: 'explore', icon: (c) => <TabExplore color={c} />, label: '探索' },
+  { mode: 'quest', icon: (c) => <TabQuest color={c} />, label: '任务' },
+  { mode: 'create', icon: (c) => <TabCreate color={c} />, label: '创造' },
 ]
 
 /** 跳过历史消息加载后的 TTS（模块级变量，避免 React Compiler ref 跨 effect 限制）
@@ -125,6 +127,9 @@ function ChatPageInner() {
     isLoading,
     error,
     latestCreationId,
+    imageMap,
+    imageLoadingMap,
+    imageErrorMap,
     send,
     retry,
     clearError,
@@ -295,7 +300,7 @@ function ChatPageInner() {
   }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none">
       {/* 顶栏：返回 + 模式 tab */}
       <header
         className="flex-shrink-0 sticky top-0 z-40"
@@ -333,14 +338,14 @@ function ChatPageInner() {
                     : { color: '#8B7355' }
                   }
                 >
-                  {tab.icon} {tab.label}
+                  {tab.icon(isActive ? '#fff' : '#8B7355')} {tab.label}
                 </Link>
               )
             })}
           </div>
           {/* 精灵头像：右上角，与首页保持一致 */}
           <FairySecretHomeWrap className="absolute right-4 flex items-center gap-1.5">
-            <FairyAvatar emotion={emotion} size="sm" animated={isStreaming || isLoading} />
+            <FairyAvatar emotion={emotion} size="sm" animated={isStreaming || isLoading} smoothSwitch />
           </FairySecretHomeWrap>
         </div>
       </header>
@@ -348,8 +353,8 @@ function ChatPageInner() {
       {/* 对话区域 */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-4"
-        style={{ paddingBottom: '8px' }}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4"
+        style={{ paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}
       >
         {/* 创造模式：悬浮学科按钮 */}
         {mode === 'create' && (
@@ -407,6 +412,9 @@ function ChatPageInner() {
               idx === messages.length - 1 &&
               isStreaming
             }
+            imageUrl={msg.role === 'assistant' ? imageMap[msg.id] : undefined}
+            imageLoading={msg.role === 'assistant' ? !!imageLoadingMap[msg.id] : false}
+            imageError={msg.role === 'assistant' ? imageErrorMap[msg.id] : null}
           />
         ))}
 
@@ -466,8 +474,8 @@ function ChatPageInner() {
         </div>
       )}
 
-      {/* 输入区域 */}
-      <div className="flex-shrink-0">
+      {/* 输入区域 — 固定在聊天容器底部，不参与页面级滚动 */}
+      <div className="flex-shrink-0 border-t" style={{ borderColor: 'rgba(58,46,44,0.08)' }}>
         <ChatInput
           value={input}
           onChange={setInput}

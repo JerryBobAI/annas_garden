@@ -19,30 +19,15 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  // 1. 确定孩子 ID
+  // 1. 单账号模型：childId 就是当前用户
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, display_name')
+    .select('display_name')
     .eq('id', user.id)
     .single()
 
-  let childId = user.id
-  let childName = profile?.display_name || '小朋友'
-
-  if (profile?.role === 'parent') {
-    const { data: children } = await supabase
-      .from('profiles')
-      .select('id, display_name')
-      .eq('parent_id', user.id)
-      .eq('role', 'child')
-      .limit(1)
-
-    const child = children?.[0]
-    if (child) {
-      childId = child.id
-      childName = child.display_name || '小朋友'
-    }
-  }
+  const childId = user.id
+  const childName = profile?.display_name || '小朋友'
 
   // 2. 并行预取所有数据
   const [reportRes, masteryRes, convRes, plantRes] = await Promise.all([

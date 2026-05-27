@@ -1,8 +1,8 @@
 # Anna's Garden - AI 原生教育技术路线图
 
 > 基于 VISION.md 决策 (2026-05-24) 制定
-> 最后更新：2026-05-26
-> 状态：Phase 1–4 已完成；Phase 4 家长端升级（§14）已验收
+> 最后更新：2026-05-27
+> 状态：Phase 1–4 + 体验打磨全部完成
 
 ---
 
@@ -34,9 +34,10 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
   - 全局 + 各路由组独立的错误/加载状态
   - 治愈风格的错误页面（花园精灵安慰语）
 
-- [ ] **关键页面改为 Server Component** — 待做（当前全 CSR）
+- [x] **关键页面改为 Server Component** ✅（2026-05-27）
   - `app/parent/goals/page.tsx` → 服务端数据预取
   - `app/parent/dashboard/page.tsx` → 服务端数据预取
+  - 客户端交互委托给 `dashboard-client.tsx` / `goals-client.tsx`
 
 ### 0.2 数据库扩展（为 AI 对话准备）
 
@@ -411,4 +412,11 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 - **PDF 导入**：pdf-parse v2 + multipart upload API + 文本/PDF tab 切换 UI
 - **定时报告**：report-scheduler.ts + Vercel Cron 每周一 08:00 + 按需触发
 
-**下一步：体验打磨 + Server Components 重构（见 Phase 0 债务项）**
+### 体验打磨批次（2026-05-27）
+
+- **T1**: Server Component 重构（dashboard + goals）
+- **T5**: zod 入参校验（`lib/api/validation.ts`）
+- **T11**: PWA 配置（manifest + apple-web-app + viewport）
+- **T14**: 恢复 reactStrictMode: true
+
+**当前状态：全部完成，143 测试通过，47 路由正常。待迭代：RLS 收紧、精灵动画、艰宾浩斯调度、E2E 测试。**

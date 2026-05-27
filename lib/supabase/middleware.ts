@@ -68,31 +68,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // 已登录 → 入口权限与显式家长验证
+  // 已登录 → 单账号模型：所有用户都可访问 /child，/parent 需 PIN 验证
   if (user && isProtected) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    const role = profile?.role
-
-    // child 用户经 PIN 验证后可进入家长区（同设备家长入口）
-    if (role === 'child' && pathname.startsWith('/parent')) {
-      const verified = isParentVerified(request, user.id)
-      if (!isParentVerificationPath(pathname) && !verified) {
-        const url = request.nextUrl.clone()
-        url.pathname = PARENT_VERIFY_PATH
-        url.search = ''
-        url.searchParams.set('redirectTo', `${pathname}${request.nextUrl.search}`)
-        return NextResponse.redirect(url)
-      }
-    }
-
-    // 家长区需要额外 PIN 验证，避免孩子只知道登录密码就进入家长端。
+    // 家长区统一 PIN 验证（不区分 role，任何已登录用户通过 PIN 即可进入）
     if (
-      role === 'parent' &&
       pathname.startsWith('/parent') &&
       !isParentVerificationPath(pathname) &&
       !isParentVerified(request, user.id)
@@ -103,6 +82,7 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set('redirectTo', `${pathname}${request.nextUrl.search}`)
       return NextResponse.redirect(url)
     }
+    // /child 路径：任何已登录用户直接放行
   }
 
   // 已登录且访问登录页 → 跳转首页

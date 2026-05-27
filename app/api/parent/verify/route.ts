@@ -16,16 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 })
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'parent') {
-    return NextResponse.json({ error: '只有家长账号可以进入家长区' }, { status: 403 })
-  }
-
+  // 单账号模型：任何登录用户通过 PIN 即可进入家长区
   const expectedPin = getExpectedPin()
   if (!expectedPin) {
     return NextResponse.json(

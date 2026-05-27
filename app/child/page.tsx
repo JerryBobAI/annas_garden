@@ -8,6 +8,7 @@ import { createClient, getClientUser } from '@/lib/supabase/client'
 import ModeCard from '@/components/child/mode-card'
 import { FairySecretHomeWrap } from '@/components/child/fairy-secret-home'
 import { AccountSecretSwitchWrap } from '@/components/child/account-secret-switch'
+import { IconExplore, IconQuest, IconCreate, IconGardenCard } from '@/components/icons/mode-icons'
 import { staggerContainer, fadeInUp, springGentle } from '@/lib/animations'
 import type { LearningRecommendation } from '@/types'
 
@@ -150,21 +151,21 @@ export default function ChildHomePage() {
         >
           <ModeCard
             mode="explore"
-            icon="🌿"
+            icon={<IconExplore size={48} />}
             title="探索"
             subtitle="问精灵任何问题"
             href="/child/chat?mode=explore"
           />
           <ModeCard
             mode="quest"
-            icon="⚔️"
+            icon={<IconQuest size={48} />}
             title="任务"
             subtitle="趣味练习挑战"
             href="/child/chat?mode=quest"
           />
           <ModeCard
             mode="create"
-            icon="✏️"
+            icon={<IconCreate size={48} />}
             title="创造"
             subtitle="故事·数学·英语"
             href="/child/chat?mode=create&subject=chinese"
@@ -177,7 +178,7 @@ export default function ChildHomePage() {
           >
             <Link href="/child/garden" className="block">
               <div className="card rounded-soft p-6 text-center relative">
-                <div className="text-5xl mb-3">🌳</div>
+                <div className="flex justify-center mb-3"><IconGardenCard size={48} /></div>
                 <div className="font-semibold mb-1 text-primary-dark">花园</div>
                 <div className="text-xs text-muted-brown">
                   {gardenPlants > 0 ? `${gardenPlants} 棵植物` : '等你来种植'}

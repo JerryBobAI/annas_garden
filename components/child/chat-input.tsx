@@ -53,9 +53,8 @@ export default function ChatInput({
 
   return (
     <div
-      className="border-t px-4 py-3"
+      className="px-4 py-3"
       style={{
-        borderColor: 'rgba(58,46,44,0.08)',
         background: 'rgba(255,255,255,0.9)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',

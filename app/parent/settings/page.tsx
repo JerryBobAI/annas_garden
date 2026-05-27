@@ -31,6 +31,13 @@ const typeLabels: Record<string, string> = {
   scrape: '网页抓取',
 }
 
+const imageProviderLabels: Record<string, string> = {
+  labnana: '🎨 LabNana',
+  seedance: '🌱 SeedDance',
+  cogview: '🔮 CogView',
+  dalle: '🖼️ DALL-E',
+}
+
 const modeLabels: Record<string, string> = {
   explore: '🌍 探索模式',
   quest: '⚔️ 任务模式',
@@ -48,6 +55,8 @@ export default function SettingsPage() {
   const [childId, setChildId] = useState<string | null>(null)
   // AI 配置状态
   const [aiProvider, setAiProvider] = useState<string>('unknown')
+  // 图片 Provider 切换
+  const [imageProvider, setImageProvider] = useState<string>('')
 
   useEffect(() => {
     async function fetchSettings() {
@@ -55,23 +64,8 @@ export default function SettingsPage() {
       const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
-      // 定位孩子 ID
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      let cId = user.id
-      if (profile?.role === 'parent') {
-        const { data: children } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('parent_id', user.id)
-          .eq('role', 'child')
-          .limit(1)
-        if (children?.[0]) cId = children[0].id
-      }
+      // 单账号模型：childId 就是当前用户
+      const cId = user.id
       setChildId(cId)
 
       // 并行获取数据
@@ -98,6 +92,9 @@ export default function SettingsPage() {
           setAiProvider(provData.provider || 'glm')
         }
       } catch { setAiProvider('glm') }
+
+      // 读取图片 Provider 偏好
+      setImageProvider(localStorage.getItem('imageProvider') || '')
 
       setLoading(false)
     }
@@ -286,6 +283,34 @@ export default function SettingsPage() {
                 <span className="text-sm font-medium" style={{ color: '#FFB300' }}>
                   {aiProvider === 'siliconflow' ? 'SiliconFlow' : aiProvider === 'openai' ? 'OpenAI' : '浏览器原生'}
                 </span>
+              </div>
+              <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm" style={{ color: '#3A2E2C' }}>图片生成</span>
+                  <span className="text-xs" style={{ color: '#8B7355' }}>
+                    {imageProvider ? imageProviderLabels[imageProvider] || imageProvider : '自动'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(['', 'labnana', 'seedance', 'cogview', 'dalle'] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => {
+                        setImageProvider(p)
+                        if (p) localStorage.setItem('imageProvider', p)
+                        else localStorage.removeItem('imageProvider')
+                      }}
+                      className="text-xs px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+                      style={{
+                        backgroundColor: imageProvider === p ? 'rgba(255,179,0,0.15)' : 'rgba(139,115,85,0.06)',
+                        color: imageProvider === p ? '#d97706' : '#8B7355',
+                        fontWeight: imageProvider === p ? 600 : 400,
+                      }}
+                    >
+                      {p === '' ? '🔄 自动' : imageProviderLabels[p]}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex justify-between items-center p-3 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
                 <span className="text-sm" style={{ color: '#3A2E2C' }}>自适应难度</span>

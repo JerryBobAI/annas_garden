@@ -24,23 +24,8 @@ export default async function GoalsPage() {
     redirect('/auth/login')
   }
 
-  // 1. 定位孩子 ID
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  let childId = user.id
-  if (profile?.role === 'parent') {
-    const { data: children } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('parent_id', user.id)
-      .eq('role', 'child')
-      .limit(1)
-    if (children?.[0]) childId = children[0].id
-  }
+  // 单账号模型：childId 就是当前用户
+  const childId = user.id
 
   // 2. 查询当前学期
   const today = new Date().toISOString().split('T')[0]

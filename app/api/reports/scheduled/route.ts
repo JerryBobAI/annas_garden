@@ -25,19 +25,8 @@ export async function GET() {
     return Response.json({ error: '请先登录' }, { status: 401 })
   }
 
-  // 查询该用户关联的孩子
-  const { data: children } = await supabase
-    .from('profiles')
-    .select('id, display_name')
-    .eq('parent_id', user.id)
-    .eq('role', 'child')
-
-  // 也可能自己是孩子（没有 parent_id 的情况）
-  const childIds = children?.map(c => c.id) || []
-  if (childIds.length === 0) {
-    // 尝试用自己的 ID（孩子直接登录的场景）
-    childIds.push(user.id)
-  }
+  // 单账号模型：直接用当前用户 ID
+  const childIds = [user.id]
 
   const results = []
 

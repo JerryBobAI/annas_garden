@@ -60,23 +60,8 @@ export default function PlansPage() {
       const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
-      // 定位孩子 ID
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      let childId = user.id
-      if (profile?.role === 'parent') {
-        const { data: children } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('parent_id', user.id)
-          .eq('role', 'child')
-          .limit(1)
-        if (children?.[0]) childId = children[0].id
-      }
+      // 单账号模型：childId 就是当前用户
+      const childId = user.id
 
       // Fetch active study plan for this child
       const { data: plans } = await supabase

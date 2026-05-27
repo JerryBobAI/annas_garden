@@ -81,4 +81,99 @@ describe('parseAIResponse', () => {
     expect(result.commands.illustration_prompt).toBe('温暖水彩风的小花园和发光种子')
     expect(result.commands.creation_id).toBe('creation-1')
   })
+
+  // ========== 以下为回归测试，防止再次改坏 ==========
+
+  it('image_url 字段不会被过滤（图片持久化依赖）', () => {
+    const raw = JSON.stringify({
+      text: '这是一幅美丽的花园！',
+      commands: {
+        emotion: 'happy',
+        image_url: 'data:image/png;base64,abc123',
+        illustration_prompt: 'a beautiful garden',
+      },
+    })
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('这是一幅美丽的花园！')
+    expect(result.commands.image_url).toBe('data:image/png;base64,abc123')
+    expect(result.commands.illustration_prompt).toBe('a beautiful garden')
+  })
+
+  it('markdown ```json 包裹且含 emoji 和换行应正确解析', () => {
+    // 这是 GLM 实际返回的格式，之前导致页面显示原始 JSON
+    const raw = '```json\n{"text":"哇！你想画花园吗？🌸 猴子在树上摇晃尾巴？","commands":{"emotion":"happy","options":["画五颜六色的花朵 🌺","画高高的树 🌲"],"knowledge_tags":["monkey","tail"],"difficulty":1,"garden_event":"seed_planted","illustration_prompt":"A beautiful garden"}}\n```'
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('哇！你想画花园吗？🌸 猴子在树上摇晃尾巴？')
+    expect(result.commands.emotion).toBe('happy')
+    expect(result.commands.options).toHaveLength(2)
+    expect(result.commands.garden_event).toBe('seed_planted')
+  })
+
+  it('JSON 中 text 含引号转义应正确提取', () => {
+    const raw = JSON.stringify({
+      text: '他说："你好！"这是个有趣的故事。',
+      commands: { emotion: 'happy' },
+    })
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('他说："你好！"这是个有趣的故事。')
+  })
+
+  it('JSON 中 text 含换行符应保留', () => {
+    const raw = JSON.stringify({
+      text: '第一行\n第二行\n第三行',
+      commands: { emotion: 'thinking' },
+    })
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('第一行\n第二行\n第三行')
+    expect(result.commands.emotion).toBe('thinking')
+  })
+
+  it('深层嵌套的 markdown 代码块应正确解析', () => {
+    // AI 有时会返回多余空格或不同的 json 标记
+    const raw = '```json  \n  {"text":"测试","commands":{"emotion":"surprised"}}  \n```'
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('测试')
+    expect(result.commands.emotion).toBe('surprised')
+  })
+
+  it('不完整 JSON（text 可提取但 commands 解析失败）应回退 commands', () => {
+    // 模拟 AI 输出被截断的情况
+    const raw = '{"text": "回答内容", "commands": {"emotion": "hap'
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('回答内容')
+    expect(result.commands.emotion).toBe(DEFAULT_OUTPUT.emotion)
+  })
+
+  it('garden_event 为 null 时应保留', () => {
+    const raw = JSON.stringify({
+      text: '今天天气真好！',
+      commands: { emotion: 'happy', garden_event: null },
+    })
+    const result = parseAIResponse(raw)
+    expect(result.commands.garden_event).toBeNull()
+  })
+
+  it('difficulty 边界值验证（1和5合法，0和6非法）', () => {
+    const valid1 = parseAIResponse(JSON.stringify({ text: 't', commands: { emotion: 'happy', difficulty: 1 } }))
+    const valid5 = parseAIResponse(JSON.stringify({ text: 't', commands: { emotion: 'happy', difficulty: 5 } }))
+    const invalid0 = parseAIResponse(JSON.stringify({ text: 't', commands: { emotion: 'happy', difficulty: 0 } }))
+    const invalid6 = parseAIResponse(JSON.stringify({ text: 't', commands: { emotion: 'happy', difficulty: 6 } }))
+    expect(valid1.commands.difficulty).toBe(1)
+    expect(valid5.commands.difficulty).toBe(5)
+    expect(invalid0.commands.difficulty).toBeUndefined()
+    expect(invalid6.commands.difficulty).toBeUndefined()
+  })
+
+  it('BOM 字符开头的 JSON 应正确处理', () => {
+    const raw = '\uFEFF{"text":"BOM测试","commands":{"emotion":"happy"}}'
+    const result = parseAIResponse(raw)
+    expect(result.text).toBe('BOM测试')
+  })
+
+  it('next_mode 合法值应保留，非法值应置 null', () => {
+    const valid = parseAIResponse(JSON.stringify({ text: 't', commands: { emotion: 'happy', next_mode: 'quest' } }))
+    const invalid = parseAIResponse(JSON.stringify({ text: 't', commands: { emotion: 'happy', next_mode: 'invalid' } }))
+    expect(valid.commands.next_mode).toBe('quest')
+    expect(invalid.commands.next_mode).toBeNull()
+  })
 })

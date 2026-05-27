@@ -10,6 +10,9 @@ interface ChatBubbleProps {
   content: string
   emotion?: FairyEmotion
   isStreaming?: boolean
+  imageUrl?: string
+  imageLoading?: boolean
+  imageError?: string | null
 }
 
 /**
@@ -22,6 +25,9 @@ export default function ChatBubble({
   content,
   emotion = 'happy',
   isStreaming = false,
+  imageUrl,
+  imageLoading = false,
+  imageError = null,
 }: ChatBubbleProps) {
   const isAssistant = role === 'assistant'
 
@@ -56,6 +62,21 @@ export default function ChatBubble({
               <span className="inline-block ml-1 animate-hint-pulse">▍</span>
             )}
           </>
+        )}
+        {isAssistant && imageLoading && (
+          <p className="mt-2 text-xs text-muted-brown animate-hint-pulse origin-left">精灵在画画…</p>
+        )}
+        {isAssistant && imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt="精灵画的图"
+            className="mt-2 max-w-full rounded-xl border"
+            style={{ borderColor: 'rgba(58,46,44,0.12)' }}
+          />
+        )}
+        {isAssistant && !imageUrl && imageError && (
+          <p className="mt-2 text-xs" style={{ color: '#C62828' }}>{imageError}</p>
         )}
       </div>
     </motion.div>

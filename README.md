@@ -5,10 +5,13 @@
 ## ✨ 核心特性
 
 ### 🤖 AI 花园精灵
+- **动态 SVG 角色**：精灵有呼吸、眨眼、腮红动画，随情绪变化表情
 - **AI 对话学习**：花园精灵是孩子的学习伙伴，不是老师
 - **三种学习模式**：探索（好奇心驱动）、任务（学期大纲驱动）、创造（表达驱动）
 - **语音 + 触摸并重**：孩子可以选择说话或点击
 - **结构化 AI 输出**：情绪、选项、知识标签、花园事件
+- **艾宾浩斯复习**：遗忘曲线自动检测，精灵在对话中自然引导复习
+- **AI 图片生成**：对话中自动生成教学插图（SeedDance / LabNana / CogView / DALL-E，通过 `IMAGE_PROVIDER` 切换）
 
 ### 🌳 花园世界
 - 学习 = 培育花园，每次学习让种子发芽、成长、开花
@@ -61,6 +64,7 @@ cp .env.local.example .env.local
 - `VOICE_PROVIDER` — 语音方案：`browser`（零成本） / `siliconflow`（推荐） / `openai`
 - `SILICONFLOW_API_KEY` — 硅基流动（免费注册 siliconflow.cn，推荐）
 - `OPENAI_API_KEY` — OpenAI（可选，付费但质量最高）
+- `LABNANA_API_KEY` — LabNana 图片生成（推荐，高质量文生图）
 - `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` — 自动化测试账号（可选）
 
 > 💡 **语音零成本方案**：不配任何 API Key 时自动使用浏览器内置语音（Web Speech API），完全免费。
@@ -72,6 +76,28 @@ npm run dev
 
 访问 http://localhost:3000
 
+## 🧪 测试
+
+### 单元测试（Jest）
+
+```bash
+npm test              # 运行 188 个单元测试
+npm run test:watch    # watch 模式
+```
+
+### E2E 测试（Playwright）
+
+```bash
+npm run test:e2e      # 运行 68 个 E2E 测试（自动启动 dev server）
+npm run test:e2e:ui   # 可视化调试模式
+```
+
+> E2E 测试覆盖：登录认证、孩子端全页面、家长端全页面、AI 对话交互、API 健康检查、未登录重定向保护、iPad 移动端适配。需要 `.env.local` 中有 `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`。
+
+### CI
+
+推送到 `main` 或发起 PR 时自动触发 GitHub Actions E2E 测试（`.github/workflows/e2e.yml`）。
+
 ## 📋 开发状态
 
 | Phase | 内容 | 状态 |
@@ -82,6 +108,7 @@ npm run dev
 | Phase 3 | 创造模式（故事/数学/英语） | ✅ 完成 |
 | Phase 4 | 智能课程引擎 + 家长 AI 洞察 | ✅ 完成 |
 | 体验打磨 | SSR 重构 + PWA + zod 校验 + StrictMode | ✅ 完成 |
+| 迭代增强 | 精灵动态头像 + 复习调度 + 图片生成 + RLS 收紧 | ✅ 完成 |
 
 ## 📄 文档
 
