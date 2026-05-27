@@ -18,9 +18,11 @@
 
 ### 👨‍👩‍👧 家长功能
 - **AI 学习洞察**：AI 生成的定性学习报告（不只是分数）
-- **内容管理**：手动上传 + AI 识别 + 文本/PDF 导入
-- **学期目标**：学科进度追踪
-- **学习计划**：周视图
+- **家长中心实时面板**：本周对话、花园植物、待审核、AI 快报摘要
+- **内容管理**：手动上传 + AI 识别 + 文本/PDF 导入（`/parent/content/import`）
+- **学期目标**：学科进度 + 知识点掌握度进度条
+- **学习计划**：周视图 + AI 推荐补充任务
+- **系统设置**：认知档案、JSON 数据导出、AI 配置状态
 
 ### 👧 孩子体验
 - **AI 对话界面**：和花园精灵自由对话学习
@@ -39,7 +41,7 @@
 - **样式**：Tailwind CSS v4 + shadcn/ui
 - **后端**：Supabase (PostgreSQL + Auth + Storage)
 - **AI**：Vercel AI SDK + 智谱 GLM-4（默认） / OpenAI GPT-4o（可切换）
-- **PWA**：next-pwa（离线可选）
+- **PWA**：Web App Manifest + apple-web-app（iPad 添加到主屏幕）
 
 ## 🚀 快速开始
 
@@ -79,6 +81,7 @@ npm run dev
 | Phase 2 | 语音交互 + 基础花园可视化 | ✅ 完成 |
 | Phase 3 | 创造模式（故事/数学/英语） | ✅ 完成 |
 | Phase 4 | 智能课程引擎 + 家长 AI 洞察 | ✅ 完成 |
+| 体验打磨 | SSR 重构 + PWA + zod 校验 + StrictMode | ✅ 完成 |
 
 ## 📄 文档
 

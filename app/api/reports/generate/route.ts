@@ -18,7 +18,7 @@ import {
   type MasteryChange,
   type CreationSummary,
 } from '@/lib/engine/report-generator'
-import type { ReportType } from '@/types'
+import { validateBody, generateReportSchema } from '@/lib/api/validation'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -28,12 +28,11 @@ export async function POST(req: Request) {
     return Response.json({ error: '请先登录' }, { status: 401 })
   }
 
-  let body: { child_id?: string; type?: ReportType; period_start?: string; period_end?: string }
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: '请求格式错误' }, { status: 400 })
+  const validation = await validateBody(req, generateReportSchema)
+  if (!validation.success) {
+    return Response.json({ error: validation.error }, { status: 400 })
   }
+  const body = validation.data
 
   const childId = body.child_id || user.id
   const reportType = body.type || 'weekly'

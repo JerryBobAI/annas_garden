@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import { playTap, playNavigate } from '@/lib/sounds'
 import FairyAvatar from '@/components/child/fairy-avatar'
 import type { LearningMode } from '@/types'
@@ -34,7 +34,7 @@ export default function OnboardingPage() {
   // 检查是否已完成 onboarding
   useEffect(() => {
     async function check() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) {
         router.replace('/auth/login')
         return
@@ -59,7 +59,7 @@ export default function OnboardingPage() {
 
     setSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (user) {
         await supabase.from('profiles').update({ display_name: trimmed }).eq('id', user.id)
       }
@@ -74,7 +74,7 @@ export default function OnboardingPage() {
   async function handleSeedPlant() {
     setSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (user) {
         await supabase.from('garden_plants').insert({
           child_id: user.id,
@@ -94,7 +94,7 @@ export default function OnboardingPage() {
   async function handleModeSelect(mode: LearningMode) {
     setSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (user) {
         await supabase.from('cognitive_profiles').insert({
           child_id: user.id,

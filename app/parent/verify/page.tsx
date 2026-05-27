@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useState, useSyncExternalStore } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { BackIconLink } from '@/components/shared/back-icon-link'
 
@@ -31,14 +31,11 @@ export default function ParentVerifyPage() {
 function ParentVerifyForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [mounted, setMounted] = useState(false)
+  const emptySubscribe = () => () => {}
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

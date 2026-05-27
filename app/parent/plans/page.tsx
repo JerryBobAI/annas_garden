@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BackIconLink } from '@/components/shared/back-icon-link'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import type { LearningRecommendation } from '@/types'
 
 interface StudyPlan {
@@ -38,6 +38,14 @@ interface DaySchedule {
   isPast: boolean
 }
 
+/** 本地日历日期 YYYY-MM-DD（避免 toISOString UTC 偏移） */
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export default function PlansPage() {
   const [loading, setLoading] = useState(true)
   const [activePlan, setActivePlan] = useState<StudyPlan | null>(null)
@@ -49,7 +57,7 @@ export default function PlansPage() {
   useEffect(() => {
     async function fetchPlans() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
       // 定位孩子 ID
@@ -70,10 +78,11 @@ export default function PlansPage() {
         if (children?.[0]) childId = children[0].id
       }
 
-      // Fetch active study plan
+      // Fetch active study plan for this child
       const { data: plans } = await supabase
         .from('study_plans')
         .select('*')
+        .eq('child_id', childId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -82,8 +91,23 @@ export default function PlansPage() {
         setActivePlan(plans[0])
       }
 
+      // Scope schedules to goals linked to this parent's materials
+      const { data: parentMaterials } = await supabase
+        .from('materials')
+        .select('id, goal_id')
+        .eq('created_by', user.id)
+
+      const scopedGoalIds = [
+        ...new Set(
+          ((parentMaterials || []) as { goal_id: string | null }[])
+            .map((m) => m.goal_id)
+            .filter((id): id is string => Boolean(id))
+        ),
+      ]
+
       // Calculate current week range (Monday to Sunday)
       const now = new Date()
+      const todayStr = formatLocalDate(now)
       const dayOfWeek = now.getDay()
       const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
       const monday = new Date(now)
@@ -95,27 +119,32 @@ export default function PlansPage() {
       for (let i = 0; i < 7; i++) {
         const d = new Date(monday)
         d.setDate(monday.getDate() + i)
-        const dateStr = d.toISOString().split('T')[0]
+        const dateStr = formatLocalDate(d)
         days.push({
           date: dateStr,
           dayLabel: `${d.getMonth() + 1}/${d.getDate()}`,
           weekday: weekdayNames[d.getDay()],
           items: [],
-          isToday: dateStr === now.toISOString().split('T')[0],
-          isPast: d < new Date(now.toISOString().split('T')[0]),
+          isToday: dateStr === todayStr,
+          isPast: dateStr < todayStr,
         })
       }
 
-      // Fetch content schedules for this week
+      // Fetch content schedules for this week (family-scoped)
       const startDate = days[0].date
       const endDate = days[6].date
 
-      const { data: schedules } = await supabase
-        .from('content_schedules')
-        .select('*, learning_goals(title, subject), materials(title)')
-        .gte('plan_date', startDate)
-        .lte('plan_date', endDate)
-        .order('plan_date', { ascending: true })
+      let schedules: ContentSchedule[] | null = null
+      if (scopedGoalIds.length > 0) {
+        const { data } = await supabase
+          .from('content_schedules')
+          .select('*, learning_goals(title, subject), materials(title)')
+          .in('goal_id', scopedGoalIds)
+          .gte('plan_date', startDate)
+          .lte('plan_date', endDate)
+          .order('plan_date', { ascending: true })
+        schedules = data
+      }
 
       if (schedules && schedules.length > 0) {
         for (const s of schedules) {
@@ -266,7 +295,7 @@ export default function PlansPage() {
                       <p className="text-xs mt-0.5" style={{ color: '#8B7355' }}>{rec.reason}</p>
                     </div>
                     <Link
-                      href={`/child/chat?mode=${rec.suggested_mode}&subject=${rec.subject}&topic=${rec.knowledge_point}`}
+                      href={`/child/chat?mode=${encodeURIComponent(rec.suggested_mode)}&subject=${encodeURIComponent(rec.subject)}&topic=${encodeURIComponent(rec.knowledge_point)}`}
                       className="text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap"
                       style={{ backgroundColor: 'rgba(255,179,0,0.15)', color: '#d97706' }}
                     >

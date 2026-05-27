@@ -7,6 +7,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEventHandler,
   type ReactNode,
 } from 'react'
@@ -115,11 +116,8 @@ export function AccountSecretSwitchWrap({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showDialog, setShowDialog] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
-  const [portalReady, setPortalReady] = useState(false)
-
-  useEffect(() => {
-    setPortalReady(true)
-  }, [])
+  const emptySubscribe = () => () => {}
+  const portalReady = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
   useEffect(() => {
     if (!showDialog) return

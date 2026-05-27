@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { parseAIResponse } from '@/lib/ai/structured-output'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import type { FairyEmotion, LearningMode, AIStructuredOutput } from '@/types'
 
 /** 单条对话消息（UI 用） */
@@ -134,7 +134,7 @@ export function useFairyChat(
       setOptions([])
       setIsLoading(true)
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getClientUser()
         if (!user || cancelled) { setIsLoading(false); return }
 
         // 如果有指定 conversationId，直接加载
@@ -180,7 +180,14 @@ export function useFairyChat(
         if (cancelled) return
 
         if (dbMessages && dbMessages.length > 0) {
-          const restored: ChatMessage[] = dbMessages
+          type DbMessage = {
+            id: string
+            role: string
+            content: string
+            structured_output: AIStructuredOutput | null
+            created_at: string
+          }
+          const restored: ChatMessage[] = (dbMessages as DbMessage[])
             .filter(m => m.role !== 'system')
             .map(m => {
               // 兼容旧数据：如果 content 存的是原始 JSON，重新解析

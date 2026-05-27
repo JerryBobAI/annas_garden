@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import ModeCard from '@/components/child/mode-card'
 import { FairySecretHomeWrap } from '@/components/child/fairy-secret-home'
 import { AccountSecretSwitchWrap } from '@/components/child/account-secret-switch'
@@ -47,7 +47,7 @@ export default function ChildHomePage() {
 
     async function load() {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getClientUser()
         if (!user || cancelled) return
 
         // 检查是否需要 Onboarding（cognitive_profiles 不存在）
@@ -78,7 +78,9 @@ export default function ChildHomePage() {
 
         // 计算连续学习天数
         if (streakRes.data && streakRes.data.length > 0) {
-          const dates = [...new Set(streakRes.data.map(r => new Date(r.created_at).toDateString()))]
+          const dates = [...new Set(
+            (streakRes.data as { created_at: string }[]).map(r => new Date(r.created_at).toDateString())
+          )]
           let streak = 0
           const todayDate = new Date()
           todayDate.setHours(0, 0, 0, 0)

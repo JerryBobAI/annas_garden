@@ -98,21 +98,23 @@ export function stageToType(stage: number): PlantType {
 }
 
 /**
+ * 每个学科在各成长阶段的 emoji
+ * 让花园视觉更丰富多样（G3）
+ */
+const PLANT_EMOJI_MAP: Record<string, Record<PlantType, string>> = {
+  chinese: { seed: '\u{1F330}', sprout: '\u{1F331}', growing: '\u{1F38B}', blooming: '\u{1F338}', withered: '\u{1F940}' },
+  math:    { seed: '\u{1F330}', sprout: '\u{1F331}', growing: '\u{1F335}', blooming: '\u{1F33B}', withered: '\u{1F940}' },
+  english: { seed: '\u{1F330}', sprout: '\u{1F331}', growing: '\u2618\uFE0F',  blooming: '\u{1F33C}', withered: '\u{1F940}' },
+  default: { seed: '\u{1F330}', sprout: '\u{1F331}', growing: '\u{1F33F}', blooming: '\u{1F33A}', withered: '\u{1F940}' },
+}
+
+/**
  * 根据学科和植物状态返回对应 emoji
+ * G3: 每个学科+阶段组合都有独特 emoji
  */
 export function getPlantEmoji(type: PlantType, subject?: Subject | null): string {
-  if (type === 'withered') return '🥀'
-  if (type === 'seed') return '🌰'
-  if (type === 'sprout') return '🌱'
-  if (type === 'growing') return '🌿'
-
-  // blooming — 按学科区分
-  switch (subject) {
-    case 'chinese': return '🌸'
-    case 'math': return '🌻'
-    case 'english': return '🌼'
-    default: return '🌺'
-  }
+  const key = subject || 'default'
+  return PLANT_EMOJI_MAP[key]?.[type] ?? PLANT_EMOJI_MAP.default[type]
 }
 
 /**

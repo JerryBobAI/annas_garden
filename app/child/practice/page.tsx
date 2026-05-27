@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { StickyHeader } from '@/components/shared/sticky-header'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import { playCorrect, playWrong, playTap } from '@/lib/sounds'
 
 interface Material {
@@ -124,7 +124,7 @@ function PracticeContent() {
 
   const saveAnswer = useCallback(async (exercise: Exercise, correct: boolean, duration: number) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) return
 
       await supabase.from('learning_records').insert({

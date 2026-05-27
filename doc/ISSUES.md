@@ -1,7 +1,31 @@
 # Anna's Garden - 问题清单与架构审视
 
-> 最后更新：2026-05-24
-> 状态：待讨论
+> 最后更新：2026-05-27
+> 状态：Phase 1–4 全部完成；以下为历史债务与后续优化项
+
+---
+
+## Phase 1–4 综合验收记录（2026-05-27）
+
+- **143 单元测试全部通过**，`npm run build` 通过
+- **Lint**：0 error，2 warning（error.tsx 未使用参数 `_error` — Next.js 约定、content 页 `<img>`）
+- §14 PU1–PU8 全部达标（见 `spec/PHASE4.md` §14.7）
+- PHASE1–4 验收清单已更新：已完成项全部标注 `[x]`
+- 审查修复：家长首页/计划页数据 scope、本地日期、URL 编码、开花植物字段、useState-in-effect lint 修复
+
+### 已完成（2026-05-27）
+
+- ✅ 花园多区域 UI（G1–G4）— 四季主题 + 学科区域分区 + 解锁机制 + 学科×阶段 emoji
+- ✅ 季节效果随月份变化 — season.ts + garden-canvas 集成
+- ✅ PDF 导入 — pdf-parse v2 + /api/imports/upload + 文本/PDF tab 切换 UI
+- ✅ 定时报告生成机制 — report-scheduler + Vercel Cron + 按需触发
+
+### 待做项（优先级低，后续迭代）
+
+- RLS 收紧（materials/content_schedules 全局 SELECT → 按 child_id 限制）
+- 花园精灵动态头像（Lottie/SVG 帧动画）
+- 艾宾浩斯复习调度
+- E2E 自动化测试
 
 ---
 
@@ -11,11 +35,11 @@
 
 | # | 问题 | 位置 | 说明 |
 |---|------|------|------|
-| T1 | 所有页面 `'use client'` | `app/**/*.tsx` | 未利用 Server Components 优势，数据预取、首屏性能、SEO 全部丢失 |
-| T2 | 无独立 Layout | `app/parent/`, `app/child/` | 导航栏在每个页面重复写，改一处要改 N 处 |
-| T3 | 组件未抽取 | `components/child/`, `components/parent/` 为空 | 大量 UI 逻辑堆在页面里，无法复用 |
-| T4 | 无错误边界 | 全局缺失 | 缺少 `error.tsx`、`loading.tsx`、`not-found.tsx`，出错时白屏 |
-| T5 | API 无入参校验 | `app/api/**` | 没有 zod 等校验，恶意/错误请求可能导致异常 |
+| T1 | ~~所有页面 `'use client'`~~ | `app/parent/dashboard`, `app/parent/goals` | ✅ **已解决** — 家长面板+目标页改为 Server Component（SSR 预取） |
+| T2 | ~~无独立 Layout~~ | `app/parent/layout.tsx`, `app/child/layout.tsx` | ✅ **已解决**（Phase 1） |
+| T3 | ~~组件未抽取~~ | `components/child/` 12 个组件 | ✅ **已解决**（Phase 1–3） |
+| T4 | ~~无错误边界~~ | `app/child/error.tsx`, `app/parent/error.tsx` + loading | ✅ **已解决**（Phase 1） |
+| T5 | ~~API 无入参校验~~ | `lib/api/validation.ts` | ✅ **已解决** — zod schema + validateBody/validateQuery 工具 |
 
 ### 🟡 中优先级
 
@@ -24,17 +48,17 @@
 | T6 | 无全局状态管理 | 全局 | 每个页面独立 fetch，用户/会话状态无共享 |
 | T7 | shadcn/ui 利用率低 | `components/ui/` | 只用了 Button，大量 UI 手写（Card、Dialog、Sheet、Form 等都可用） |
 | T8 | 样式双轨制 | `globals.css` + `lib/styles.ts` | CSS 工具类和 JS 样式常量并存，维护成本高 |
-| T9 | 无测试 | 全局 | 无单元测试、无 E2E 测试、无可视化回归测试 |
+| T9 | ~~无测试~~ | `__tests__/` 16 个文件 | ✅ **已解决** — 143 单元测试，E2E 待做 |
 | T10 | 内联 style 对象 | `app/page.tsx` 等 | 部分页面仍有 `style={{ color: '#3A2E2C' }}`，与 CSS 类重复 |
 
 ### 🟢 低优先级
 
 | # | 问题 | 位置 | 说明 |
 |---|------|------|------|
-| T11 | PWA 未配置 | `next.config.ts` | `next-pwa` 已装但未启用 |
+| T11 | ~~PWA 未配置~~ | `public/manifest.json`, `app/layout.tsx` | ✅ **已解决** — manifest + apple-web-app + viewport |
 | T12 | 图片资源未优化 | `public/` | 只有默认 SVG，无自定义品牌素材 |
 | T13 | Supabase Storage 未接入 | - | 图片上传功能缺失 |
-| T14 | `reactStrictMode: false` | `next.config.ts` | 为减少警告关闭了严格模式，但会隐藏潜在问题 |
+| T14 | ~~`reactStrictMode: false`~~ | `next.config.ts` | ✅ **已解决** — 恢复为 true |
 
 ---
 

@@ -4,7 +4,7 @@
  * 家长端错误边界
  */
 export default function ParentError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string }

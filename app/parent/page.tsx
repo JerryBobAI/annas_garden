@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BackIconLink } from '@/components/shared/back-icon-link'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 
 // 实时统计数据类型
 interface QuickStats {
@@ -21,9 +21,10 @@ export default function ParentPage() {
 
   useEffect(() => {
     async function fetchStats() {
+      try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      const user = await getClientUser()
+      if (!user) { return }
 
       // 判断角色并定位孩子 ID
       const { data: profile } = await supabase
@@ -70,12 +71,13 @@ export default function ParentPage() {
           .from('garden_plants')
           .select('id', { count: 'exact', head: true })
           .eq('child_id', childId)
-          .eq('stage', 'blooming'),
-        // 待审核内容数
+          .eq('plant_type', 'blooming'),
+        // 待审核内容数（仅统计当前家长创建的资料）
         supabase
           .from('materials')
           .select('id', { count: 'exact', head: true })
-          .eq('status', 'draft'),
+          .eq('status', 'draft')
+          .eq('created_by', user.id),
         // 最新 AI 报告摘要
         fetch(`/api/reports?child_id=${childId}&type=weekly&limit=1`),
       ])
@@ -96,8 +98,11 @@ export default function ParentPage() {
           setAiSummary(reports[0].ai_summary)
         }
       }
-
+      } catch (err) {
+        console.warn('[parent] failed to load stats:', err)
+      } finally {
       setLoading(false)
+      }
     }
     fetchStats()
   }, [])

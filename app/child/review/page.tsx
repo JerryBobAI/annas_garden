@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { StickyHeader } from '@/components/shared/sticky-header'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import { playSuccess, playNavigate } from '@/lib/sounds'
 
 interface WrongAnswerWithDetails {
@@ -55,7 +55,7 @@ export default function ReviewPage() {
   const fetchWrongAnswers = useCallback(async () => {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
       const { data, error } = await supabase

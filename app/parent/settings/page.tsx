@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { BackIconLink } from '@/components/shared/back-icon-link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 
 interface DataSource {
   id: string
@@ -52,7 +52,7 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchSettings() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
       // 定位孩子 ID
@@ -123,6 +123,15 @@ export default function SettingsPage() {
         supabase.from('garden_plants').select('*').eq('child_id', childId),
         supabase.from('learning_records').select('*').eq('child_id', childId),
       ])
+
+      const exportError =
+        convRes.error?.message ||
+        masteryRes.error?.message ||
+        plantsRes.error?.message ||
+        recordsRes.error?.message
+      if (exportError) {
+        throw new Error(exportError)
+      }
 
       const exportData = {
         exported_at: new Date().toISOString(),
@@ -195,7 +204,7 @@ export default function SettingsPage() {
         {navHeader}
 
         {/* Phase 4: 认知档案 */}
-        {cognitive && (
+        {cognitive ? (
           <div className="card rounded-soft p-6 mb-6 animate-card-enter">
             <div className="content-z">
               <h2 className="text-xl font-bold mb-4" style={{ color: '#3A2E2C' }}>
@@ -248,6 +257,17 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+        ) : (
+          <div className="card rounded-soft p-6 mb-6 animate-card-enter">
+            <div className="content-z">
+              <h2 className="text-xl font-bold mb-2" style={{ color: '#3A2E2C' }}>
+                🧒 认知档案
+              </h2>
+              <p className="text-sm" style={{ color: '#8B7355' }}>
+                完成几次对话后，AI 会自动生成认知档案
+              </p>
+            </div>
+          </div>
         )}
 
         {/* AI 配置状态 */}
@@ -289,7 +309,7 @@ export default function SettingsPage() {
         <div className="card rounded-soft p-6 mb-6 animate-card-enter" style={{ '--stagger': '120ms' } as React.CSSProperties}>
           <div className="content-z">
             <h2 className="text-xl font-bold mb-4" style={{ color: '#3A2E2C' }}>
-              � 数据源管理
+              📡 数据源管理
             </h2>
             {dataSources.length === 0 ? (
               <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>

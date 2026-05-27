@@ -1,8 +1,8 @@
 # Anna's Garden - AI 原生教育技术路线图
 
 > 基于 VISION.md 决策 (2026-05-24) 制定
-> 最后更新：2026-05-25
-> 状态：Phase 1 + Phase 2 + Phase 3 已完成，Phase 4 待开始
+> 最后更新：2026-05-26
+> 状态：Phase 1–4 已完成；Phase 4 家长端升级（§14）已验收
 
 ---
 
@@ -14,7 +14,7 @@
 ```
 Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 技术债务修复   AI 对话核心   语音交互     创造模式     智能课程引擎
-(融入P1) ✅   ✅ (05-24)    ✅ (05-25)  ← 下一步     (持续迭代)
+(融入P1) ✅   ✅ (05-24)    ✅ (05-25)   ✅ (05-25)   ✅ (05-26)
 ```
 
 ---
@@ -25,22 +25,22 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 0.1 代码层修复
 
-- [ ] **家长端/孩子端添加独立 layout.tsx**
+- [x] **家长端/孩子端添加独立 layout.tsx** ✅
   - `app/parent/layout.tsx` — 家长端导航栏
   - `app/child/layout.tsx` — 孩子端底部 Tab + 花园精灵浮窗入口
   - 消除各页面中的重复导航代码
 
-- [ ] **添加 error.tsx / loading.tsx**
+- [x] **添加 error.tsx / loading.tsx** ✅
   - 全局 + 各路由组独立的错误/加载状态
   - 治愈风格的错误页面（花园精灵安慰语）
 
-- [ ] **关键页面改为 Server Component**
+- [ ] **关键页面改为 Server Component** — 待做（当前全 CSR）
   - `app/parent/goals/page.tsx` → 服务端数据预取
   - `app/parent/dashboard/page.tsx` → 服务端数据预取
 
 ### 0.2 数据库扩展（为 AI 对话准备）
 
-- [ ] **新增对话相关表**
+- [x] **新增对话相关表** ✅（002_ai_conversations.sql）
 
   ```sql
   -- 对话会话
@@ -82,7 +82,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
   );
   ```
 
-- [ ] **新增认知档案表**
+- [x] **新增认知档案表** ✅（002_ai_conversations.sql）
 
   ```sql
   -- 孩子的认知档案（AI 持续更新）
@@ -113,12 +113,12 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 0.3 项目配置
 
-- [ ] **安装 AI 相关依赖**
+- [x] **安装 AI 相关依赖** ✅
   - `ai` (Vercel AI SDK — 统一的 LLM 流式接口)
   - `openai` (OpenAI SDK)
   - `zod` (API 入参校验)
 
-- [ ] **环境变量补充**
+- [x] **环境变量补充** ✅
   - `OPENAI_API_KEY`
   - `OPENAI_MODEL` (默认 `gpt-4o`)
   - `TTS_PROVIDER` / `STT_PROVIDER`
@@ -131,7 +131,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 1.1 花园精灵 AI 引擎
 
-- [ ] **System Prompt 设计**（核心中的核心）
+- [x] **System Prompt 设计** ✅（lib/ai/prompts.ts）
 
   精灵需要三套人格 prompt：
   - `explore` — 好奇心陪伴者：引导追问，展开联想
@@ -145,13 +145,13 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
   - 性格：混合（可爱呆萌 × 聪明博学），偶尔犯小错让孩子纠正
   - 对话长度：每轮回复不超过 3-4 句（孩子注意力有限）
 
-- [ ] **API 路由：流式对话**
+- [x] **API 路由：流式对话** ✅（/api/ai/chat）
   - `POST /api/ai/chat` — 流式响应（Vercel AI SDK useChat）
   - 输入：conversation_id, message, mode, subject
   - 输出：SSE 流式文字 + 结构化指令（如"显示选项"、"显示图片"）
   - 自动保存对话到 conversations / messages 表
 
-- [ ] **AI 结构化输出**
+- [x] **AI 结构化输出** ✅
 
   AI 不只返回纯文字，还返回结构化指令：
   ```json
@@ -167,7 +167,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 1.2 孩子端对话 UI
 
-- [ ] **对话页面 `app/child/chat/page.tsx`**
+- [x] **对话页面 `app/child/chat/page.tsx`** ✅
   - 聊天气泡界面（精灵在左，Anna 在右）
   - 精灵头像（动态，根据情绪变化表情）
   - 流式文字显示（逐字出现）
@@ -175,32 +175,32 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
   - 关键节点显示可点选的选项卡片
   - 消息支持富文本（图片、公式、拼音注音）
 
-- [ ] **花园精灵浮窗**
+- [x] **花园精灵浮窗** ✅（集成在 layout 底部导航）
   - 屏幕右下角常驻的精灵小头像（类似客服 widget）
   - 点击展开对话面板
   - 在任何页面都能唤起精灵
 
-- [ ] **首页改造**
+- [x] **首页改造** ✅
   - 孩子首页从"任务列表"变为"花园世界入口"
   - 精灵问候 + 今日推荐 + 快捷入口
 
 ### 1.3 家长端 AI 报告
 
-- [ ] **成长报告页面 `app/parent/insights/page.tsx`**
+- [x] **成长报告页面** ✅（app/parent/dashboard/page.tsx AI 洞察面板）
   - 替代（或增强）现有的 dashboard
   - 展示 AI 生成的每日/每周成长笔记
   - 好奇心种子列表（Anna 问了什么）
   - 知识点掌握度图谱
   - 建议和洞察
 
-- [ ] **API 路由：生成报告**
+- [x] **API 路由：生成报告** ✅（/api/reports/generate）
   - `POST /api/ai/report` — 基于最近对话生成家长报告
   - 输入：child_id, date_range
   - 输出：结构化报告 JSON
 
 ### 1.4 学校内容导入（文本优先）
 
-- [ ] **家长端内容导入 `app/parent/import/page.tsx`**
+- [x] **家长端内容导入** ✅（app/parent/content/import/page.tsx）
   - 文本粘贴框：家长贴入课本内容/知识点文本
   - AI 自动解析 → 提取知识点 → 注入到精灵的知识库
   - PDF 上传（V1 实现，用 pdf-parse 提取文字）
@@ -213,19 +213,19 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 2.1 语音输入（STT）
 
-- [ ] **Web Speech API 集成**（免费，浏览器原生）
+- [x] **Web Speech API 集成** ✅（browser-speech.ts）
   - 长按说话 / 点击开始-点击结束
   - 实时显示识别中的文字
   - 识别完成 → 自动发送给 AI
 
-- [ ] **Whisper API 备选**
+- [x] **Whisper API 备选** ✅（SiliconFlow SenseVoice / OpenAI Whisper）
   - 如果 Web Speech API 中文识别不够准
   - 录音 → 上传 → Whisper 转文字 → 发送给 AI
   - 延迟略高但准确度更好
 
 ### 2.2 语音输出（TTS）
 
-- [ ] **AI 回复自动朗读**
+- [x] **AI 回复自动朗读** ✅（SiliconFlow CosyVoice2 / OpenAI TTS）
   - OpenAI TTS API（声音自然，可选儿童友好的声音）
   - 或 Web Speech API（免费但声音较机械）
   - 精灵说话时头像有口型/表情动画
@@ -233,7 +233,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 2.3 语音 UX 优化
 
-- [ ] **对话模式切换**
+- [x] **对话模式切换** ✅
   - 纯文字模式（安静环境/公共场合）
   - 语音模式（正常使用）
   - 混合模式（语音输入，文字也显示）
@@ -247,13 +247,13 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 3.1 故事创作（语文）
 
-- [ ] **看图说话**
+- [x] **看图说话** ✅（故事创造模式）
   - AI 生成/选择一幅图片
   - Anna 口述或打字描述
   - 精灵引导扩展：「然后呢？」「小猫是什么颜色的？」
   - 最终整理成一个小故事（可以分享给家长）
 
-- [ ] **续写故事**
+- [x] **续写故事** ✅（故事创造模式）
   - 精灵开头：「从前，在一个花园里……」
   - Anna 接着编：「住着一只小兔子！」
   - 精灵继续推动情节 + 引入生字
@@ -261,7 +261,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 3.2 数学探索
 
-- [ ] **情境化数学任务**
+- [x] **情境化数学任务** ✅（数学探索模式）
   - 精灵讲一个小故事 → 自然引出数学问题
   - 开放式回答：「你觉得怎么算？」
   - AI 追问思考过程而非只看答案
@@ -269,7 +269,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 3.3 英语冒险
 
-- [ ] **角色扮演对话**
+- [x] **角色扮演对话** ✅（英语冒险模式）
   - 精灵扮演不同角色：「I'm a cat! What's your name?」
   - Anna 用英语回答（语音或文字）
   - 自然拼读练习嵌入对话中
@@ -283,25 +283,25 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 
 ### 4.1 花园世界 UI
 
-- [ ] **可视化花园地图**
+- [x] **可视化花园地图** ✅（2D 画布 + 四季主题 + 学科区域分区 + 解锁机制）
   - 故事小屋 / 数字森林 / 彩虹桥 / 好奇心角落 / 创意工坊
   - 点击区域 → 进入对应学习模式
   - 植物/花朵 = 已掌握的知识点
   - 天气/光照 = 学习状态
 
-- [ ] **花园精灵动态头像**
+- [ ] **花园精灵动态头像** — 待做（当前使用 emoji + 情绪文字）
   - 多种表情状态：开心、思考、惊讶、鼓励、犯傻
   - 根据对话上下文自动切换
   - Lottie 动画 或 SVG 帧动画
 
 ### 4.2 智能课程引擎
 
-- [ ] **知识图谱自动调度**
+- [x] **知识图谱自动调度** ✅（knowledge-graph.ts）
   - 学期大纲 → 知识点依赖图
   - AI 根据掌握度自动选择下一个知识点
   - 在不同模式中嵌入（探索时自然引出，任务时直接练习）
 
-- [ ] **艾宾浩斯复习调度**
+- [ ] **艾宾浩斯复习调度** — 待做（当前推荐基于掌握度+前置依赖）
   - 知识点 + 掌握度 + 时间衰减 → 自动复习
   - 不用"错题本"页面，而是精灵自然提起：「上次那个减法问题，你还记得吗？」
 
@@ -399,15 +399,16 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 | Phase 0 | 2026-05-24 | 融入 Phase 1，技术债务同步解决 |
 | Phase 1 | 2026-05-24 | AI 对话核心、孩子端重写、结构化输出、18 测试用例 |
 | Phase 2 | 2026-05-25 | 多 Provider 语音交互、花园可视化、41 测试用例 |
-| Phase 3 | 待开始 | 创造模式（故事/数学/英语） |
-| Phase 4 | 待开始 | 智能课程引擎 + 家长 AI 洞察 |
+| Phase 3 | 2026-05-25 | 创造模式（故事/数学/英语）、创作保存与花园联动 |
+| Phase 4 | 2026-05-27 | 知识图谱推荐、AI 周报、花园四季+多区域、PDF 导入、定时报告、143 测试 |
 
-### Phase 2 关键技术决策
+### Phase 4 交付摘要
 
-- **语音方案**：采用多 Provider 抽象层（browser / siliconflow / openai）
-- **STT**：SiliconFlow SenseVoice（推荐）/ OpenAI Whisper / Web Speech API
-- **TTS**：SiliconFlow CosyVoice2 diana 声音（推荐）/ OpenAI TTS / Web Speech API
-- **零成本方案**：不配 API Key 时自动回退到浏览器 Web Speech API
-- **花园可视化**：CSS + div 方案（Phase 2 植物数量少，简单高效）
+- **智能引擎**：`/api/recommendations`、自适应难度、认知档案自动更新
+- **家长洞察**：`/api/reports/generate`、学习报告看板、PIN 验证门禁
+- **家长端升级（§14）**：首页实时统计 + AI 快报、目标掌握度、计划 AI 推荐、设置导出/认知档案、内容导入入口
+- **花园增强**：四季主题（season.ts）、学科区域分区（areas.ts）、区域解锁机制、学科×阶段独立 emoji
+- **PDF 导入**：pdf-parse v2 + multipart upload API + 文本/PDF tab 切换 UI
+- **定时报告**：report-scheduler.ts + Vercel Cron 每周一 08:00 + 按需触发
 
-**下一步：Phase 3 — 创造模式（故事创作 / 数学探索 / 英语冒险）**
+**下一步：体验打磨 + Server Components 重构（见 Phase 0 债务项）**

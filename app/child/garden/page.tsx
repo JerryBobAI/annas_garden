@@ -1,11 +1,13 @@
 'use client'
 
 import React, { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import { StickyHeader } from '@/components/shared/sticky-header'
 import GardenCanvas from '@/components/child/garden-canvas'
+import type { GardenAreaData } from '@/components/child/garden-canvas'
 import PlantDetail from '@/components/child/plant-detail'
 import { getPlantEmoji } from '@/lib/garden/growth'
+import { getSeasonTheme } from '@/lib/garden/season'
 import type { GardenPlant } from '@/lib/garden/growth'
 
 type SubjectFilter = 'all' | 'math' | 'chinese' | 'english'
@@ -28,27 +30,38 @@ export default function GardenPage() {
   const [selectedPlant, setSelectedPlant] = useState<GardenPlantWithConversation | null>(null)
   const [filter, setFilter] = useState<SubjectFilter>('all')
   const [stats, setStats] = useState({ total: 0, seed: 0, sprout: 0, growing: 0, blooming: 0 })
+  const [areas, setAreas] = useState<GardenAreaData[]>([])
+  const seasonTheme = getSeasonTheme()
 
   // 加载花园数据
   const fetchGardenData = useCallback(async () => {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
-      const { data: plantsData, error } = await supabase
-        .from('garden_plants')
-        .select('*')
-        .eq('child_id', user.id)
-        .order('created_at', { ascending: false })
+      // 并行加载植物 + 区域
+      const [plantsResult, areasResult] = await Promise.all([
+        supabase
+          .from('garden_plants')
+          .select('*')
+          .eq('child_id', user.id)
+          .order('created_at', { ascending: false }),
+        fetch('/api/garden/areas').then(r => r.ok ? r.json() : null),
+      ])
 
-      if (error) {
-        console.error('Garden fetch error:', error)
+      if (plantsResult.error) {
+        console.error('Garden fetch error:', plantsResult.error)
         setLoading(false)
         return
       }
 
-      const allPlants = (plantsData || []) as GardenPlantWithConversation[]
+      // 设置区域数据
+      if (areasResult?.areas) {
+        setAreas(areasResult.areas)
+      }
+
+      const allPlants = (plantsResult.data || []) as GardenPlantWithConversation[]
       const conversationIds = Array.from(new Set(
         allPlants.map(p => p.source_conversation_id).filter(Boolean) as string[],
       ))
@@ -59,8 +72,11 @@ export default function GardenPage() {
           .select('id, mode, subject')
           .in('id', conversationIds)
 
-        const conversationMap = new Map(
-          (conversations || []).map(c => [c.id, { mode: c.mode, subject: c.subject }]),
+        const conversationMap = new Map<string, { mode: string; subject: string }>(
+          ((conversations || []) as { id: string; mode: string; subject: string }[]).map(c => [
+            c.id,
+            { mode: c.mode, subject: c.subject },
+          ]),
         )
 
         for (const plant of allPlants) {
@@ -68,7 +84,7 @@ export default function GardenPage() {
             ? conversationMap.get(plant.source_conversation_id)
             : null
           plant.source_mode = source?.mode || null
-          plant.source_subject = source?.subject || null
+          plant.source_subject = (source?.subject as SubjectFilter | undefined) ?? null
         }
       }
 
@@ -119,11 +135,17 @@ export default function GardenPage() {
       />
 
       <div className="container mx-auto px-4">
+        {/* 季节氛围 */}
+        <div className="text-center text-xs mb-2 animate-card-enter" style={{ color: '#8B7355' }}>
+          {seasonTheme.mood}
+        </div>
+
         {/* 花园画布 */}
         <div className="mb-6 animate-card-enter">
           <GardenCanvas
             plants={filteredPlants}
             onPlantClick={setSelectedPlant}
+            areas={areas}
           />
         </div>
 

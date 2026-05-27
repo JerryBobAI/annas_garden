@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 import type { Creation } from '@/types'
 
 /** 学科筛选选项 */
@@ -24,7 +24,7 @@ export default function CreationsPage() {
     async function load() {
       setIsLoading(true)
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const user = await getClientUser()
         if (!user) return
 
         let query = supabase
@@ -48,10 +48,11 @@ export default function CreationsPage() {
           .eq('child_id', user.id)
 
         if (allCreations) {
+          const rows = allCreations as { subject: string }[]
           setStats({
-            story: allCreations.filter(c => c.subject === 'chinese').length,
-            math: allCreations.filter(c => c.subject === 'math').length,
-            english: allCreations.filter(c => c.subject === 'english').length,
+            story: rows.filter(c => c.subject === 'chinese').length,
+            math: rows.filter(c => c.subject === 'math').length,
+            english: rows.filter(c => c.subject === 'english').length,
           })
         }
       } catch (err) {

@@ -16,6 +16,13 @@ import { createClient } from '@/lib/supabase/server'
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 import { getGlmOpenAiBaseUrl } from '@/lib/ai/glm-config'
+import { z } from 'zod'
+import { validateBody } from '@/lib/api/validation'
+
+const importPostSchema = z.object({
+  type: z.enum(['text', 'pdf', 'image']).default('text'),
+  content: z.string().optional(),
+})
 
 export async function GET(req: Request) {
   const supabase = await createClient()
@@ -50,19 +57,14 @@ export async function POST(req: Request) {
     return Response.json({ error: '请先登录' }, { status: 401 })
   }
 
-  let body: { type?: string; content?: string }
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: '请求格式错误' }, { status: 400 })
+  const validation = await validateBody(req, importPostSchema)
+  if (!validation.success) {
+    return Response.json({ error: validation.error }, { status: 400 })
   }
+  const body = validation.data
 
-  const importType = body.type || 'text'
+  const importType = body.type
   const content = body.content
-
-  if (!['text', 'pdf', 'image'].includes(importType)) {
-    return Response.json({ error: '无效的导入类型' }, { status: 400 })
-  }
 
   if (importType === 'text' && !content?.trim()) {
     return Response.json({ error: '请输入文本内容' }, { status: 400 })

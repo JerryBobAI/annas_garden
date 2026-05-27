@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { StickyHeader } from '@/components/shared/sticky-header'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientUser } from '@/lib/supabase/client'
 
 interface Achievement {
   id: string
@@ -14,6 +14,24 @@ interface Achievement {
   target: number
 }
 
+interface LearningRecordRow {
+  is_correct: boolean
+  created_at: string
+  duration: number | null
+  material_id: string | null
+}
+
+interface WrongAnswerRow {
+  exercise_id: string
+  mastered: boolean
+  wrong_count: number
+}
+
+interface MaterialRow {
+  id: string
+  subject: string
+}
+
 export default function AchievementsPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
@@ -23,7 +41,7 @@ export default function AchievementsPage() {
   const fetchAchievements = useCallback(async () => {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getClientUser()
       if (!user) { setLoading(false); return }
 
       const [recordsRes, wrongRes] = await Promise.all([
@@ -36,8 +54,8 @@ export default function AchievementsPage() {
           .eq('child_id', user.id)
       ])
 
-      const allRecords = recordsRes.data || []
-      const wrongAnswersData = wrongRes.data || []
+      const allRecords = (recordsRes.data || []) as LearningRecordRow[]
+      const wrongAnswersData = (wrongRes.data || []) as WrongAnswerRow[]
 
       const totalCount = allRecords.length
       const totalCorrect = allRecords.filter(r => r.is_correct).length
@@ -82,11 +100,13 @@ export default function AchievementsPage() {
         .select('id, subject')
         .eq('status', 'approved')
 
-      const materialsMap = new Map((materialsData || []).map(m => [m.id, m]))
+      const materialsMap = new Map(
+        ((materialsData || []) as MaterialRow[]).map(m => [m.id, m])
+      )
       const subjectCorrect: Record<string, number> = {}
       const subjectTotal: Record<string, number> = {}
       for (const record of allRecords) {
-        const mat = materialsMap.get(record.material_id)
+        const mat = record.material_id ? materialsMap.get(record.material_id) : undefined
         if (!mat) continue
         subjectTotal[mat.subject] = (subjectTotal[mat.subject] || 0) + 1
         if (record.is_correct) subjectCorrect[mat.subject] = (subjectCorrect[mat.subject] || 0) + 1
