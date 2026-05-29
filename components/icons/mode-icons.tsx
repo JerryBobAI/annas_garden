@@ -82,6 +82,102 @@ export function IconCreate({ size = 48, className }: ModeIconProps) {
   )
 }
 
+/** Landing 品牌 — 向日葵 */
+export function IconLogoSunflower({ size = 64, className }: ModeIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className} aria-hidden>
+      <circle cx="32" cy="32" r="30" fill="rgba(255,179,0,0.12)" />
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i * 30 * Math.PI) / 180
+        const cx = 32 + Math.sin(angle) * 18
+        const cy = 32 - Math.cos(angle) * 18
+        return (
+          <ellipse
+            key={i}
+            cx={cx}
+            cy={cy}
+            rx="5"
+            ry="9"
+            fill="rgba(255,179,0,0.35)"
+            stroke="#5D4E37"
+            strokeWidth="1.2"
+            transform={`rotate(${i * 30} ${cx} ${cy})`}
+          />
+        )
+      })}
+      <circle cx="32" cy="32" r="9" fill="rgba(255,179,0,0.45)" stroke="#5D4E37" strokeWidth="1.5" />
+      <circle cx="32" cy="32" r="4" fill="rgba(139,115,85,0.35)" />
+      <path d="M32 52c-2 4-6 6-10 6 2-3 5-5 10-6z" fill="rgba(76,175,80,0.35)" stroke="#5D4E37" strokeWidth="1.2" />
+      <path d="M32 52c2 4 6 6 10 6-2-3-5-5-10-6z" fill="rgba(76,175,80,0.25)" stroke="#5D4E37" strokeWidth="1.2" />
+    </svg>
+  )
+}
+
+/** 花园精灵 — 带翅膀的小精灵 */
+export function IconFairyPartner({ size = 48, className }: ModeIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className} aria-hidden>
+      <path
+        d="M8 22c4-6 10-8 16-6 2 6 0 12-4 16-6 2-12 0-12-10z"
+        fill="rgba(147,112,219,0.15)"
+        stroke="#5D4E37"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M40 22c-4-6-10-8-16-6-2 6 0 12 4 16 6 2 12 0 12-10z"
+        fill="rgba(255,105,180,0.15)"
+        stroke="#5D4E37"
+        strokeWidth="1.5"
+      />
+      <circle cx="24" cy="20" r="7" fill="rgba(255,248,240,0.9)" stroke="#5D4E37" strokeWidth="1.8" />
+      <circle cx="21" cy="19" r="1.2" fill="#5D4E37" />
+      <circle cx="27" cy="19" r="1.2" fill="#5D4E37" />
+      <path d="M22 23c2 2 4 2 6 0" stroke="#5D4E37" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M24 27v8" stroke="#5D4E37" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M20 32h8" stroke="#5D4E37" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** 家长洞察 — 成长曲线 */
+export function IconParentInsight({ size = 48, className }: ModeIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className} aria-hidden>
+      <rect x="8" y="10" width="32" height="28" rx="3" fill="rgba(255,255,255,0.6)" stroke="#5D4E37" strokeWidth="1.8" />
+      <line x1="12" y1="34" x2="36" y2="34" stroke="#5D4E37" strokeWidth="1.2" opacity="0.3" />
+      <path
+        d="M12 30l8-6 6 4 10-12"
+        stroke="#FFB300"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="30" r="2" fill="#5D4E37" />
+      <circle cx="20" cy="24" r="2" fill="#5D4E37" />
+      <circle cx="26" cy="28" r="2" fill="#5D4E37" />
+      <circle cx="36" cy="16" r="2" fill="#5D4E37" />
+    </svg>
+  )
+}
+
+/** 安全守护 — 盾牌 + 锁 */
+export function IconSafetyShield({ size = 48, className }: ModeIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className} aria-hidden>
+      <path
+        d="M24 6l14 5v12c0 10-6 16-14 19-8-3-14-9-14-19V11l14-5z"
+        fill="rgba(76,175,80,0.12)"
+        stroke="#5D4E37"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <rect x="19" y="20" width="10" height="9" rx="2" fill="rgba(255,248,240,0.9)" stroke="#5D4E37" strokeWidth="1.5" />
+      <path d="M21 20v-2a3 3 0 016 0v2" stroke="#5D4E37" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="24" cy="25" r="1.5" fill="#5D4E37" />
+    </svg>
+  )
+}
+
 /** 花园卡片 — 小花园场景 */
 export function IconGardenCard({ size = 48, className }: ModeIconProps) {
   return (

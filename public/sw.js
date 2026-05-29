@@ -1,4 +1,4 @@
-const CACHE_NAME = 'annas-garden-v1'
+const CACHE_NAME = 'annas-garden-v3'
 const PRECACHE_URLS = ['/offline', '/manifest.json', '/images/icon-192.svg']
 
 self.addEventListener('install', (event) => {
@@ -42,6 +42,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (!isStaticAsset) return
+
+  // Next.js 静态资源带 content hash，构建后文件名会变；cache-first 会长期命中旧 404
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const cached = await caches.match(request)
+        return cached || Response.error()
+      }),
+    )
+    return
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {

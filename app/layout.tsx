@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Anna's Garden - 安娜的花园 | AI 原生儿童教育",
   description:
-    "让一年级孩子在 AI 花园精灵陪伴下，通过探索、任务和创造学语文、数学、英语。基础技能在故事里自然发生，好奇心不被刷题杀死。",
+    "让孩子在 AI 花园精灵陪伴下，通过探索、任务和创造学语文、数学、英语。基础技能在故事里自然发生，好奇心不被刷题杀死。",
   manifest: "/manifest.json",
   openGraph: {
     title: ogTitle,

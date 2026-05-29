@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { springGentle } from '@/lib/animations'
 
@@ -64,9 +64,18 @@ async function shareImage(url: string, title: string) {
  * 对话中的 AI 生成图片：放大、保存、分享
  */
 export default function ChatImage({ url, alt = '精灵画的图', prompt }: ChatImageProps) {
+  const imgRef = useRef<HTMLImageElement>(null)
   const [loaded, setLoaded] = useState(false)
   const [enlarged, setEnlarged] = useState(false)
   const [shareHint, setShareHint] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoaded(false)
+    const img = imgRef.current
+    if (img?.complete && img.naturalWidth > 0) {
+      setLoaded(true)
+    }
+  }, [url])
 
   async function handleShare() {
     setShareHint(null)
@@ -95,48 +104,53 @@ export default function ChatImage({ url, alt = '精灵画的图', prompt }: Chat
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            ref={imgRef}
             src={url}
             alt={alt}
-            className={`w-full rounded-xl border ${loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+            className={`w-full rounded-xl border block ${loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
             style={{ borderColor: 'rgba(58,46,44,0.12)' }}
             onLoad={() => setLoaded(true)}
             onError={() => setLoaded(true)}
           />
+          {loaded && (
+            <div
+              className="absolute bottom-0 left-0 right-0 flex flex-wrap gap-1.5 p-2 pointer-events-auto"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setEnlarged(true)}
+                className="text-xs px-2.5 py-1 rounded-full touch-target"
+                style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#6B5344' }}
+              >
+                🔍 放大
+              </button>
+              <button
+                type="button"
+                onClick={() => void downloadImage(url)}
+                className="text-xs px-2.5 py-1 rounded-full touch-target"
+                style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#6B5344' }}
+              >
+                💾 保存
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                className="text-xs px-2.5 py-1 rounded-full touch-target font-semibold"
+                style={{ backgroundColor: '#FFB300', color: '#fff' }}
+              >
+                📤 分享
+              </button>
+            </div>
+          )}
           {loaded && prompt && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/35 to-transparent px-3 py-2 pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/30 to-transparent px-3 py-2 pointer-events-none">
               <p className="text-white text-xs truncate">{prompt}</p>
             </div>
           )}
         </motion.div>
 
-        {loaded && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            <button
-              type="button"
-              onClick={() => setEnlarged(true)}
-              className="text-xs px-3 py-1.5 rounded-full touch-target"
-              style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#8B7355' }}
-            >
-              🔍 放大
-            </button>
-            <button
-              type="button"
-              onClick={() => void downloadImage(url)}
-              className="text-xs px-3 py-1.5 rounded-full touch-target"
-              style={{ backgroundColor: 'rgba(255,179,0,0.12)', color: '#8B7355' }}
-            >
-              💾 保存
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleShare()}
-              className="text-xs px-3 py-1.5 rounded-full touch-target"
-              style={{ backgroundColor: 'rgba(255,179,0,0.18)', color: '#6B5344', fontWeight: 600 }}
-            >
-              📤 分享
-            </button>
-          </div>
-        )}
         {shareHint && (
           <p className="text-xs mt-1" style={{ color: '#16a34a' }}>{shareHint}</p>
         )}

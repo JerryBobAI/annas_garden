@@ -5,8 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { BackIconLink } from '@/components/shared/back-icon-link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
 export default function LoginPage() {
   return (
     <Suspense fallback={

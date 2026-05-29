@@ -1,172 +1,160 @@
 import Link from 'next/link'
 import ShareLinkButton from '@/components/shared/share-link-button'
+import {
+  IconCreate,
+  IconExplore,
+  IconFairyPartner,
+  IconGardenCard,
+  IconLogoSunflower,
+  IconParentInsight,
+  IconQuest,
+  IconSafetyShield,
+} from '@/components/icons/mode-icons'
 
 const MODES = [
   {
-    emoji: '🌿',
+    icon: IconExplore,
     title: '探索 Explore',
-    desc: '孩子主动提问，精灵陪伴发现。保护好奇心，在对话里自然触达知识点。',
+    desc: '孩子带着问题来，精灵带着故事答。知识点在对话里自然浮现，而不是先背再练。',
   },
   {
-    emoji: '🌸',
+    icon: IconQuest,
     title: '任务 Quest',
-    desc: '对齐学期大纲，用故事情境替代刷题。追问思考过程，错了当场引导理解。',
+    desc: '对齐课标与教材进度，用故事情境替代刷题。小学、初中、高中都可按学段配置。',
   },
   {
-    emoji: '🎨',
+    icon: IconCreate,
     title: '创造 Create',
-    desc: '看图说话、编故事、数学探索、英语冒险——在表达中练习，而不是被动接受题目。',
+    desc: '讲故事、画数学、做英语冒险——表达本身就是学习，作品可保存、可分享。',
   },
-]
+] as const
 
 const FEATURES = [
-  { emoji: '🧚', title: '花园精灵', desc: '会呼吸、会眨眼的学习伙伴，语音和触摸并重' },
-  { emoji: '🌳', title: '成长花园', desc: '每次学习让植物生长，掌握知识点就开花' },
-  { emoji: '📊', title: '家长洞察', desc: 'AI 质性成长报告，而不只是正确率' },
-  { emoji: '🔒', title: '安全守护', desc: '内容过滤 + PIN 保护家长区，适合儿童使用' },
-]
+  {
+    icon: IconFairyPartner,
+    title: '花园精灵',
+    desc: '会呼吸、会眨眼的学习伙伴，语音和触摸并重',
+  },
+  {
+    icon: IconGardenCard,
+    title: '成长花园',
+    desc: '每次学习让植物生长，掌握知识点就开花',
+  },
+  {
+    icon: IconParentInsight,
+    title: '家长洞察',
+    desc: 'AI 质性成长报告，而不只是正确率',
+  },
+  {
+    icon: IconSafetyShield,
+    title: '安全守护',
+    desc: '内容过滤 + PIN 保护家长区，适合儿童使用',
+  },
+] as const
 
 export function LandingPage() {
   return (
-    <main className="min-h-screen watercolor-bg">
-      {/* Hero */}
-      <section className="px-4 pt-16 pb-12 md:pt-24 md:pb-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="text-6xl md:text-7xl mb-6 animate-card-enter">🌻</div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 text-foreground animate-card-enter">
+    <div className="min-h-screen bg-[#FFFBF0]">
+      <div className="mx-auto max-w-4xl px-6 py-16">
+        <header className="text-center">
+          <div className="mb-4 flex justify-center">
+            <IconLogoSunflower size={72} />
+          </div>
+          <h1 className="text-4xl font-bold text-[#3A2E2C] md:text-5xl">
             Anna&apos;s Garden
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-3 animate-card-enter">
-            让一年级孩子在 AI 花园精灵陪伴下，通过说话、探索和创造学语文、数学、英语。
+          <p className="mt-4 text-lg text-[#5D4E37] md:text-xl">
+            让小学、初中、高中的孩子在 AI 花园精灵陪伴下，通过说话、探索和创造学语文、数学、英语。
           </p>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto mb-10 animate-card-enter">
+          <p className="mt-2 text-sm text-[#8B7355]">
             基础技能在故事里自然发生，好奇心不被刷题杀死。
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-card-enter">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
-              href="/auth/login?mode=signup"
-              className="btn-primary inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-soft touch-target"
+              href="/auth/signup"
+              className="rounded-full bg-[#FFB300] px-8 py-3 font-semibold text-[#3A2E2C] shadow-md transition hover:bg-[#FFA000]"
             >
               申请试用
             </Link>
             <Link
               href="/auth/login"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-soft touch-target border border-amber-200/60 bg-white/40 text-foreground hover:bg-white/60 transition-colors"
+              className="rounded-full border-2 border-[#8B7355] px-8 py-3 font-semibold text-[#5D4E37] transition hover:bg-white/60"
             >
               已有账号登录
             </Link>
           </div>
-        </div>
-      </section>
+        </header>
 
-      {/* 三种模式 */}
-      <section className="px-4 py-12 md:py-16">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 text-foreground">
+        <section className="mt-20">
+          <h2 className="mb-8 text-center text-2xl font-bold text-[#3A2E2C]">
             三种学习模式，交织在花园体验里
           </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {MODES.map((mode, i) => (
-              <article
-                key={mode.title}
-                className="glass-card rounded-soft p-6 animate-card-enter"
-                style={{ '--stagger': `${i * 80}ms` } as React.CSSProperties}
+          <div className="grid gap-6 md:grid-cols-3">
+            {MODES.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-[#E8DCC8] bg-white/80 p-6 shadow-sm"
               >
-                <div className="text-4xl mb-3">{mode.emoji}</div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">{mode.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{mode.desc}</p>
-              </article>
+                <div className="mb-3 flex justify-center">
+                  <Icon size={48} />
+                </div>
+                <h3 className="font-semibold text-[#3A2E2C]">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#8B7355]">{desc}</p>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* 特性 */}
-      <section className="px-4 py-12 md:py-16 bg-white/20">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 text-foreground">
+        <section className="mt-20">
+          <h2 className="mb-8 text-center text-2xl font-bold text-[#3A2E2C]">
             为家庭 MVP 试用打造
           </h2>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {FEATURES.map((feature, i) => (
-              <article
-                key={feature.title}
-                className="card rounded-soft p-5 flex gap-4 animate-card-enter"
-                style={{ '--stagger': `${i * 60}ms` } as React.CSSProperties}
+          <div className="grid gap-6 sm:grid-cols-2">
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="flex gap-4 rounded-2xl border border-[#E8DCC8] bg-white/80 p-5 shadow-sm"
               >
-                <span className="text-3xl shrink-0">{feature.emoji}</span>
-                <div>
-                  <h3 className="font-bold text-foreground mb-1">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                <div className="shrink-0">
+                  <Icon size={44} />
                 </div>
-              </article>
+                <div>
+                  <h3 className="font-semibold text-[#3A2E2C]">{title}</h3>
+                  <p className="mt-1 text-sm text-[#8B7355]">{desc}</p>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* 对比 */}
-      <section className="px-4 py-12 md:py-16">
-        <div className="max-w-3xl mx-auto glass-card rounded-soft p-8 md:p-10">
-          <h2 className="text-2xl font-bold text-center mb-6 text-foreground">
-            不是刷题 App，是 AI 原生学伴
-          </h2>
-          <div className="space-y-4 text-muted-foreground">
-            <p>
-              <span className="font-semibold text-foreground">传统：</span>
-              家长出题 → 孩子点选 ABCD → 看正确率
-            </p>
-            <p>
-              <span className="font-semibold text-foreground">Anna&apos;s Garden：</span>
-              孩子提问 → 精灵陪探索 → 花园开花 → 家长读 AI 成长笔记
-            </p>
+        <section className="mt-20 rounded-2xl border border-[#E8DCC8] bg-white/90 p-8 text-center shadow-sm">
+          <h2 className="text-xl font-bold text-[#3A2E2C]">准备好开始了吗？</h2>
+          <p className="mt-2 text-[#8B7355]">
+            申请试用后，家长可配置孩子学段与教材，在 iPad 或平板上开始花园之旅。
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/auth/signup"
+              className="inline-block rounded-full bg-[#FFB300] px-8 py-3 font-semibold text-[#3A2E2C] shadow-md transition hover:bg-[#FFA000]"
+            >
+              申请试用
+            </Link>
+            <ShareLinkButton
+              href="/"
+              title="Anna's Garden - 安娜的花园"
+              text="AI 花园精灵陪伴式学习，覆盖小学到高中"
+              label="分享给朋友"
+              className="inline-block"
+              variant="outline"
+            />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA */}
-      <section className="px-4 py-16 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
-          准备好和精灵一起进花园了吗？
-        </h2>
-        <p className="text-muted-foreground mb-8">
-          当前为 MVP 试用阶段，适合 iPad / 平板竖屏使用
-        </p>
-        <Link
-          href="/auth/login?mode=signup"
-          className="btn-primary inline-flex items-center justify-center px-10 py-4 text-lg font-semibold text-white rounded-soft touch-target"
-        >
-          开始试用
-        </Link>
-        <div className="mt-6 flex justify-center">
-          <ShareLinkButton
-            href="/"
-            title="Anna's Garden · 安娜的花园"
-            text="AI 花园精灵陪孩子探索、任务、创造 — 来看看安娜的花园"
-            label="🔗 分享给朋友"
-          />
-        </div>
-      </section>
-
-      <footer className="py-8 text-center text-sm text-muted-foreground border-t border-amber-200/30">
-        <p>🧚 Anna&apos;s Garden — AI 原生儿童教育</p>
-        <div className="mt-3 flex justify-center">
-          <ShareLinkButton
-            href="/"
-            title="Anna's Garden · 安娜的花园"
-            text="推荐一个 AI 原生儿童学习产品：安娜的花园"
-            label="📤 分享本站（带预览图）"
-            className="inline-block"
-          />
-        </div>
-        <p className="mt-2">
-          <Link href="/auth/login" className="underline hover:text-foreground">
-            登录
-          </Link>
-          {' · '}
-          MVP 试用阶段
-        </p>
-      </footer>
-    </main>
+        <footer className="mt-16 text-center text-sm text-[#8B7355]">
+          <p>Anna&apos;s Garden · 安娜的花园</p>
+          <p className="mt-1">AI 原生儿童教育 · MVP 家庭试用</p>
+        </footer>
+      </div>
+    </div>
   )
 }

@@ -356,7 +356,7 @@ function ChatPageInner() {
       <div
         ref={scrollRef}
         className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4"
-        style={{ paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}
+        style={{ paddingBottom: '24px', WebkitOverflowScrolling: 'touch' }}
       >
         {/* 创造模式：悬浮学科按钮 */}
         {mode === 'create' && (
