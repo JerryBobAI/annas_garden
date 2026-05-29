@@ -46,3 +46,8 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 e2e/.auth/*.json
+
+# next-pwa generated
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map

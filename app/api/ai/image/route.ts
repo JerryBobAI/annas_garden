@@ -17,6 +17,8 @@
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimitForUser, rateLimitResponse } from '@/lib/api/rate-limit'
+import { persistIllustrationToStorage } from '@/lib/storage/persist-image'
 
 interface ImageRequest {
   prompt: string           // 图片描述（中英文均可）
@@ -35,6 +37,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 })
   }
 
+  const rateLimit = rateLimitForUser(user.id, 'ai/image', 10, 'RATE_LIMIT_IMAGE_PER_MIN')
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit, '图片生成太频繁啦，稍后再试')
+  }
+
   // 2. 解析请求
   let body: ImageRequest
   try {
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
   }
 
-  const { prompt, size = '1K', aspect_ratio = '1:1', provider: requestProvider } = body
+  const { prompt, size = '1K', aspect_ratio = '1:1', provider: requestProvider, conversation_id } = body
 
   if (!prompt?.trim()) {
     return NextResponse.json({ error: '请提供图片描述' }, { status: 400 })
@@ -56,12 +63,20 @@ export async function POST(req: Request) {
     // 4. 选择 Provider 生成图片（请求指定 > 环境变量 > 默认顺序）
     const result = await generateImage(safePrompt, size, aspect_ratio, requestProvider)
 
-    // 图片 URL 的持久化由前端 use-fairy-chat 回写到对应消息的 structured_output.image_url
+    // 上传到 Supabase Storage 获得永久 URL；失败则回退临时 URL
+    const storedUrl = await persistIllustrationToStorage(
+      supabase,
+      user.id,
+      conversation_id,
+      result.url,
+    )
+    const url = storedUrl ?? result.url
 
     return NextResponse.json({
-      url: result.url,
+      url,
       provider: result.provider,
       prompt: safePrompt,
+      persisted: Boolean(storedUrl),
     })
   } catch (error) {
     console.error('Image generation error:', error)

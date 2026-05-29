@@ -1,20 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BackIconLink } from '@/components/shared/back-icon-link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen watercolor-bg flex items-center justify-center">
+        <p className="text-muted-foreground">加载中...</p>
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+  const [mode, setMode] = useState<'login' | 'signup'>(() =>
+    searchParams.get('mode') === 'signup' ? 'signup' : 'login',
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -23,9 +38,20 @@ export default function LoginPage() {
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/child/onboarding`,
+          },
+        })
         if (error) throw error
-        setError('注册成功！请查看邮箱确认链接。')
+        // 若 Supabase 关闭了邮箱确认，会立即返回 session
+        if (data.session) {
+          router.replace('/child/onboarding')
+          return
+        }
+        setError('注册成功！请查看邮箱确认链接，确认后即可登录。')
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error

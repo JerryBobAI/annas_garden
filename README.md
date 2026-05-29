@@ -81,8 +81,9 @@ npm run dev
 ### 单元测试（Jest）
 
 ```bash
-npm test              # 运行 188 个单元测试
+npm test              # 运行单元测试
 npm run test:watch    # watch 模式
+npm run typecheck     # TypeScript 检查
 ```
 
 ### E2E 测试（Playwright）
@@ -96,7 +97,7 @@ npm run test:e2e:ui   # 可视化调试模式
 
 ### CI
 
-推送到 `main` 或发起 PR 时自动触发 GitHub Actions E2E 测试（`.github/workflows/e2e.yml`）。
+推送到 `main` 或发起 PR 时自动触发 GitHub Actions（`.github/workflows/ci.yml`）：quality（lint + unit）→ e2e。
 
 ## 📋 开发状态
 
@@ -109,6 +110,7 @@ npm run test:e2e:ui   # 可视化调试模式
 | Phase 4 | 智能课程引擎 + 家长 AI 洞察 | ✅ 完成 |
 | 体验打磨 | SSR 重构 + PWA + zod 校验 + StrictMode | ✅ 完成 |
 | 迭代增强 | 精灵动态头像 + 复习调度 + 图片生成 + RLS 收紧 | ✅ 完成 |
+| Phase 5 | MVP Trial 准备（Landing/限流/安全/CI） | 🚧 进行中 |
 
 ## 📄 文档
 
@@ -120,8 +122,9 @@ npm run test:e2e:ui   # 可视化调试模式
 | `spec/PHASE2.md` | Phase 2 — 语音交互 + 基础花园 |
 | `spec/PHASE3.md` | Phase 3 — 创造模式 |
 | `spec/PHASE4.md` | Phase 4 — 智能课程引擎 + 家长洞察 |
-| `doc/VISION.md` | 产品愿景 |
-| `doc/ROADMAP.md` | 技术路线图 |
+| `doc/VISION.md` | 产品愿景与 MVP 边界 |
+| `doc/ROADMAP.md` | 技术路线图（含 Phase 5 MVP Trial） |
+| `doc/MVP-TRIAL.md` | MVP 试用 playbook |
 | `doc/ISSUES.md` | 问题清单 + 决策记录 |
 
 ---

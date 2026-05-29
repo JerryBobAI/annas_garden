@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { createClient } from '@/lib/supabase/server'
 import { getVoiceConfig } from '@/lib/voice/config'
+import { rateLimitForUser, rateLimitResponse } from '@/lib/api/rate-limit'
 
 /**
  * POST /api/voice/tts
@@ -14,6 +15,11 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 })
+  }
+
+  const rateLimit = rateLimitForUser(user.id, 'voice/tts', 20, 'RATE_LIMIT_VOICE_PER_MIN')
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit, '语音合成太频繁啦，稍后再试')
   }
 
   // 2. 检查 provider

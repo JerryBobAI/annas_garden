@@ -1,7 +1,7 @@
 # Anna's Garden - 问题清单与架构审视
 
-> 最后更新：2026-05-27
-> 状态：Phase 1–4 + 体验打磨 + 迭代功能全部完成；以下为历史债务与后续优化项
+> 最后更新：2026-05-29
+> 状态：Phase 1–4 完成；Phase 5 MVP Trial 准备中
 
 ---
 
@@ -31,9 +31,18 @@
 
 - ✅ E2E 自动化测试 — Playwright 68 用例（认证/孩子端/家长端/API/移动端）+ GitHub Actions CI
 
+### 已完成（2026-05-29 MVP Trial 准备）
+
+- ✅ Jest 排除 `e2e/` 误扫，`npm test` 全绿
+- ✅ CI 合并为 `ci.yml`：quality（lint + unit）→ e2e
+- ✅ API 限流：`lib/api/rate-limit.ts`（chat/image/voice/reports）
+- ✅ 内容安全兜底：`lib/ai/content-safety.ts`（输入拦截 + 输出净化）
+- ✅ 宣发 Landing Page：`/` + OpenGraph metadata
+- ✅ `.env.local.example` 与 README 同步
+
 ### 待做项（优先级低，后续迭代）
 
-- Supabase Storage 接入（图片持久化）
+- Supabase Storage 接入（图片持久化）— `007_storage_illustrations.sql` + `/api/ai/image` 上传
 
 ---
 
@@ -63,28 +72,16 @@
 
 | # | 问题 | 位置 | 说明 |
 |---|------|------|------|
-| T11 | ~~PWA 未配置~~ | `public/manifest.json`, `app/layout.tsx` | ✅ **已解决** — manifest + apple-web-app + viewport |
+| T11 | ~~PWA 未配置~~ | `public/manifest.json`, `public/sw.js`, `app/offline/` | ✅ manifest + SW + 离线页 |
 | T12 | 图片资源未优化 | `public/` | 只有默认 SVG，无自定义品牌素材 |
-| T13 | Supabase Storage 未接入 | - | 图片上传功能缺失 |
+| T13 | ~~Supabase Storage 未接入~~ | `007_storage_illustrations.sql`, `lib/storage/persist-image.ts` | ✅ 插图上传 Storage |
 | T14 | ~~`reactStrictMode: false`~~ | `next.config.ts` | ✅ **已解决** — 恢复为 true |
 
 ---
 
-## 二、技术架构审视：是否最优？
+## 二、历史架构审视（Phase 0 记录，已大部分解决）
 
-### 当前架构
-
-```
-用户 → Next.js (SSR + CSR 混合) → API Routes → Supabase (PostgreSQL + Auth)
-                                                    ↓
-                                               RLS 安全策略
-```
-
-> ℹ️ 注：以下 A1–A4 是 Phase 0 规划时的架构审视记录，大部分已在 Phase 1–4 中解决。
-
-### 核心判断：**架构能力不匹配产品愿景**
-
-当前架构是一个**传统 CRUD Web 应用**的架构，适合「家长录题 → 孩子刷题 → 看统计」的工作流。但如果定位是**原生 AI 儿童教育平台种子**，这个架构在以下维度存在根本性不足：
+> ⚠️ 以下为 2026-05-24 转型前的差距分析，**多数已在 Phase 1–4 中解决**。保留作决策追溯，勿当作当前 blocker。
 
 #### A1. 缺少 AI 实时交互层
 

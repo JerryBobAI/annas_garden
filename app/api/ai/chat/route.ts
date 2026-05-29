@@ -11,6 +11,12 @@ import { applyGardenEvent, type GardenSupabaseClient } from '@/lib/garden/events
 import { computeProfileUpdate, type ConversationData } from '@/lib/engine/cognitive-updater'
 import { calculateDifficultyAdjustment, inferDifficultyFromMastery } from '@/lib/engine/adaptive-difficulty'
 import { getReviewSchedule, getReviewPromptInjection } from '@/lib/engine/spaced-repetition'
+import { rateLimitForUser, rateLimitResponse } from '@/lib/api/rate-limit'
+import {
+  isBlockedInput,
+  sanitizeAiResponseRaw,
+  SAFETY_INPUT_REJECT,
+} from '@/lib/ai/content-safety'
 import { ChatRequest, Message, Subject, KnowledgeMastery } from '@/types'
 
 function extractAiErrorInfo(err: unknown): { message: string; statusCode?: number } {
@@ -97,6 +103,11 @@ export async function POST(req: Request) {
     return Response.json({ error: '请先登录' }, { status: 401 })
   }
 
+  const rateLimit = rateLimitForUser(user.id, 'ai/chat', 30, 'RATE_LIMIT_CHAT_PER_MIN')
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit, '精灵需要休息一下，稍后再试')
+  }
+
   // 2. 解析请求
   let body: ChatRequest
   try {
@@ -113,6 +124,10 @@ export async function POST(req: Request) {
 
   if (!['explore', 'quest', 'create'].includes(mode)) {
     return Response.json({ error: '无效的学习模式' }, { status: 400 })
+  }
+
+  if (isBlockedInput(message)) {
+    return Response.json({ error: SAFETY_INPUT_REJECT }, { status: 400 })
   }
 
   if (!process.env.GLM_API_KEY) {
@@ -241,8 +256,9 @@ export async function POST(req: Request) {
         // 流结束后保存 AI 回复；空文本说明是错误流，不入库
         if (!text?.trim()) return
 
-        const { text: parsedText, commands } = parseAIResponse(text)
-        const aiTokens = estimateTokens(text)
+        const safeRaw = sanitizeAiResponseRaw(text)
+        const { text: parsedText, commands } = parseAIResponse(safeRaw)
+        const aiTokens = estimateTokens(safeRaw)
 
         // 保存 AI 消息；创造模式稍后可能补写 creation_id。
         const { data: aiMessage } = await supabase
@@ -637,8 +653,10 @@ export async function POST(req: Request) {
       )
     }
 
+    const safeText = sanitizeAiResponseRaw(fullText)
+
     // 正常返回纯文本（前端按 stream 方式逐 chunk 读，但这里一次性返回也兼容）
-    return new Response(fullText, {
+    return new Response(safeText, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'X-Conversation-Id': conversationId!,

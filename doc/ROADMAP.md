@@ -290,10 +290,9 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
   - 植物/花朵 = 已掌握的知识点
   - 天气/光照 = 学习状态
 
-- [ ] **花园精灵动态头像** — 待做（当前使用 emoji + 情绪文字）
+- [x] **花园精灵动态头像** ✅（SVG + CSS 动画 + framer-motion 情绪切换）
   - 多种表情状态：开心、思考、惊讶、鼓励、犯傻
   - 根据对话上下文自动切换
-  - Lottie 动画 或 SVG 帧动画
 
 ### 4.2 智能课程引擎
 
@@ -302,9 +301,31 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
   - AI 根据掌握度自动选择下一个知识点
   - 在不同模式中嵌入（探索时自然引出，任务时直接练习）
 
-- [ ] **艾宾浩斯复习调度** — 待做（当前推荐基于掌握度+前置依赖）
+- [x] **艾宾浩斯复习调度** ✅（spaced-repetition.ts + 对话自然注入）
   - 知识点 + 掌握度 + 时间衰减 → 自动复习
-  - 不用"错题本"页面，而是精灵自然提起：「上次那个减法问题，你还记得吗？」
+  - 精灵自然提起：「上次那个减法问题，你还记得吗？」
+
+---
+
+## Phase 5：MVP Trial & Launch（2026-Q2，进行中）
+
+> 目标：工程硬化 + 对外宣发 + 5 家庭试用
+
+- [x] Jest 排除 E2E 误扫 + CI 增加 unit/lint
+- [x] API 限流（chat/image/voice/reports）
+- [x] 内容安全兜底（输入拦截 + 输出净化）
+- [x] 宣发 Landing Page（`/` 未登录可见）
+- [x] `.env.local.example` 与 README 同步
+- [ ] Supabase Storage 图片持久化
+- [ ] 试用 onboarding 向导（家长首次配置）
+- [ ] 5 家庭试用 + 反馈收集
+
+## Phase 6：V1.0 产品化（2026-Q3）
+
+- Moderation API（第三方内容审核）
+- 花园地图式首页（贴近「花园即应用」愿景）
+- 邀请码 / waitlist 注册
+- 品牌 OG 图与案例故事
 
 ---
 
@@ -419,4 +440,4 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4
 - **T11**: PWA 配置（manifest + apple-web-app + viewport）
 - **T14**: 恢复 reactStrictMode: true
 
-**当前状态：全部完成，143 测试通过，47 路由正常。待迭代：RLS 收紧、精灵动画、艰宾浩斯调度、E2E 测试。**
+**当前状态（2026-05-29）：Phase 1–4 全部完成；Phase 5 MVP Trial 工程硬化进行中。220+ 单元测试、68 E2E、宣发 Landing 已就绪。**

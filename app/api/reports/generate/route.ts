@@ -19,6 +19,7 @@ import {
   type CreationSummary,
 } from '@/lib/engine/report-generator'
 import { validateBody, generateReportSchema } from '@/lib/api/validation'
+import { rateLimitForUser, rateLimitResponse } from '@/lib/api/rate-limit'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -26,6 +27,11 @@ export async function POST(req: Request) {
 
   if (authError || !user) {
     return Response.json({ error: '请先登录' }, { status: 401 })
+  }
+
+  const rateLimit = rateLimitForUser(user.id, 'reports/generate', 5, 'RATE_LIMIT_REPORTS_PER_MIN')
+  if (!rateLimit.allowed) {
+    return rateLimitResponse(rateLimit, '报告生成太频繁啦，稍后再试')
   }
 
   const validation = await validateBody(req, generateReportSchema)

@@ -174,7 +174,7 @@ export function useFairyChat(
         let targetConvId = initialConversationId || null
 
         if (!targetConvId) {
-          // 查找该模式今天最近的会话
+          // 查找该模式最近的一条会话（不限日期，数据仍在 DB 中）
           // 创造模式下按 mode + subject 过滤，避免不同学科共用会话
           let convQuery = supabase
             .from('conversations')
@@ -192,12 +192,7 @@ export function useFairyChat(
 
           const recentConv = recentConvs?.[0]
           if (recentConv) {
-            // 只恢复今天的会话
-            const convDate = new Date(recentConv.started_at).toDateString()
-            const today = new Date().toDateString()
-            if (convDate === today) {
-              targetConvId = recentConv.id
-            }
+            targetConvId = recentConv.id
           }
         }
 
