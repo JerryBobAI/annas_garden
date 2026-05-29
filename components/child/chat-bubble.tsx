@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { FairyEmotion } from '@/types'
 import { bubbleAssistant, bubbleUser, springGentle } from '@/lib/animations'
 import FairyAvatar from './fairy-avatar'
+import ChatImage from './chat-image'
 
 interface ChatBubbleProps {
   role: 'user' | 'assistant'
@@ -11,6 +12,7 @@ interface ChatBubbleProps {
   emotion?: FairyEmotion
   isStreaming?: boolean
   imageUrl?: string
+  imagePrompt?: string
   imageLoading?: boolean
   imageError?: string | null
 }
@@ -26,6 +28,7 @@ export default function ChatBubble({
   emotion = 'happy',
   isStreaming = false,
   imageUrl,
+  imagePrompt,
   imageLoading = false,
   imageError = null,
 }: ChatBubbleProps) {
@@ -67,13 +70,7 @@ export default function ChatBubble({
           <p className="mt-2 text-xs text-muted-brown animate-hint-pulse origin-left">精灵在画画…</p>
         )}
         {isAssistant && imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt="精灵画的图"
-            className="mt-2 max-w-full rounded-xl border"
-            style={{ borderColor: 'rgba(58,46,44,0.12)' }}
-          />
+          <ChatImage url={imageUrl} prompt={imagePrompt} />
         )}
         {isAssistant && !imageUrl && imageError && (
           <p className="mt-2 text-xs" style={{ color: '#C62828' }}>{imageError}</p>

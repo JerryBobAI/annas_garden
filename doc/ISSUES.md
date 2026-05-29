@@ -39,10 +39,14 @@
 - ✅ 内容安全兜底：`lib/ai/content-safety.ts`（输入拦截 + 输出净化）
 - ✅ 宣发 Landing Page：`/` + OpenGraph metadata
 - ✅ `.env.local.example` 与 README 同步
+- ✅ 每家庭独立家长 PIN（`008_parent_pin_hash.sql` + 首次设置引导）
+- ✅ Open Graph 分享预览图（`app/opengraph-image.tsx`）
 
 ### 待做项（优先级低，后续迭代）
 
-- Supabase Storage 接入（图片持久化）— `007_storage_illustrations.sql` + `/api/ai/image` 上传
+- Upstash Redis 全局限流（Vercel 多实例）
+- 第三方 Moderation API
+- 品牌素材细化（自定义 favicon / 插画，OG 动态图已加）
 
 ---
 

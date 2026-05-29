@@ -24,6 +24,7 @@ Anna's Garden 面向 **公开注册家庭** 的 MVP 试用，验证「AI 学伴 
 | 家长区 | PIN 保护、AI 周报、PDF/文本导入 |
 | 安全兜底 | Prompt 护栏 + 输入拦截 + 输出净化 + API 限流 |
 | **公开注册** | Landing → `/auth/login?mode=signup` |
+| **家长 PIN** | 每账户独立 4–6 位 PIN（哈希存库）；env `PARENT_ACCESS_PIN` 仅过渡兜底 |
 | **图片永久存储** | Supabase Storage `illustrations` bucket |
 | **离线 PWA** | Service Worker 缓存静态资源 + `/offline` 兜底页 |
 
@@ -108,10 +109,10 @@ Anna's Garden 面向 **公开注册家庭** 的 MVP 试用，验证「AI 学伴 
 - [ ] `npm run lint` 0 error
 - [ ] `npm run build` 通过
 - [ ] `npx playwright test` smoke 通过
-- [ ] `.env.local` / Vercel 环境变量完整
-- [ ] `PARENT_ACCESS_PIN` 已设置
-- [ ] Supabase 迁移已应用（含 `007_storage_illustrations.sql`）
-- [ ] Supabase Auth：**关闭 Confirm email**（公开注册体验）
+- [ ] `.env.local` / Vercel 环境变量完整（`PARENT_ACCESS_PIN` 可选）
+- [ ] Supabase 迁移已应用（含 `007_storage_illustrations.sql`、`008_parent_pin_hash.sql`）
+- [ ] 家长 PIN：新用户首次进 `/parent` 会引导设置家庭专属 PIN（`PARENT_ACCESS_PIN` 仅作未设置前的过渡兜底）
+- [ ] Supabase Auth：Confirm email 按你的策略配置（当前为**开启**）
 - [ ] Supabase Dashboard 监控：MAU、DB 体积、Storage、Egress
 
 ---

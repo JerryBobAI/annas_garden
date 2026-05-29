@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimitForUser, rateLimitResponse } from '@/lib/api/rate-limit'
 import { persistIllustrationToStorage } from '@/lib/storage/persist-image'
+import { attachImageUrlToLatestAssistantMessage } from '@/lib/messages/attach-image-url'
 
 interface ImageRequest {
   prompt: string           // 图片描述（中英文均可）
@@ -72,11 +73,17 @@ export async function POST(req: Request) {
     )
     const url = storedUrl ?? result.url
 
+    let messageId: string | null = null
+    if (conversation_id) {
+      messageId = await attachImageUrlToLatestAssistantMessage(supabase, conversation_id, url)
+    }
+
     return NextResponse.json({
       url,
       provider: result.provider,
       prompt: safePrompt,
       persisted: Boolean(storedUrl),
+      message_id: messageId,
     })
   } catch (error) {
     console.error('Image generation error:', error)

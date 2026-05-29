@@ -7,6 +7,7 @@ import { BackIconLink } from '@/components/shared/back-icon-link'
 import { createClient } from '@/lib/supabase/client'
 import type { Creation, CreationPage } from '@/types'
 import WordCard from '@/components/child/word-card'
+import ShareLinkButton from '@/components/shared/share-link-button'
 
 export default function CreationDetailPage() {
   const params = useParams()
@@ -148,10 +149,18 @@ export default function CreationDetailPage() {
       )}
 
       {/* 底部操作 */}
-      <div className="flex gap-3 justify-center mt-6">
+      <div className="flex flex-wrap gap-3 justify-center mt-6">
         <button onClick={toggleFavorite} className="btn-primary px-6 py-2 text-white text-sm rounded-full touch-target">
           {creation.is_favorite ? '❤️ 已收藏' : '🤍 收藏'}
         </button>
+        {creation.status === 'completed' && (
+          <ShareLinkButton
+            href={`/share/creation/${creation.id}`}
+            title={`${creation.title} · 安娜的花园`}
+            text={`看看我在安娜的花园里的创作：${creation.title}`}
+            label="🔗 分享给爸爸妈妈"
+          />
+        )}
         <Link
           href={`/child/chat?mode=create&subject=${creation.subject}`}
           className="px-6 py-2 text-sm rounded-full touch-target border"

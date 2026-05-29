@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense, Fragment } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useFairyChat } from '@/lib/hooks/use-fairy-chat'
@@ -11,6 +11,8 @@ import OptionButtons from '@/components/child/option-buttons'
 import ChatInput from '@/components/child/chat-input'
 import { speakText, getVoiceSettings, stopAllAudio } from '@/lib/audio-player'
 import type { LearningMode, Subject } from '@/types'
+import ChatDateDivider from '@/components/child/chat-date-divider'
+import { formatChatDateDivider, getChatDayKey } from '@/lib/chat-date-label'
 import { TabExplore, TabQuest, TabCreate } from '@/components/icons/nav-icons'
 import type { ReactNode } from 'react'
 
@@ -400,23 +402,38 @@ function ChatPageInner() {
           />
         )}
 
-        {/* 消息列表（历史 + 新消息） */}
-        {messages.map((msg, idx) => (
-          <ChatBubble
-            key={msg.id}
-            role={msg.role}
-            content={msg.content}
-            emotion={msg.role === 'assistant' ? (msg.commands?.emotion || emotion) : undefined}
-            isStreaming={
-              msg.role === 'assistant' &&
-              idx === messages.length - 1 &&
-              isStreaming
-            }
-            imageUrl={msg.role === 'assistant' ? imageMap[msg.id] : undefined}
-            imageLoading={msg.role === 'assistant' ? !!imageLoadingMap[msg.id] : false}
-            imageError={msg.role === 'assistant' ? imageErrorMap[msg.id] : null}
-          />
-        ))}
+        {/* 消息列表（历史 + 新消息，跨天显示日期分割线） */}
+        {messages.map((msg, idx) => {
+          const prevDay = idx > 0 ? getChatDayKey(messages[idx - 1].createdAt) : null
+          const thisDay = getChatDayKey(msg.createdAt)
+          const showDateDivider = idx === 0 || prevDay !== thisDay
+
+          return (
+            <Fragment key={msg.id}>
+              {showDateDivider && (
+                <ChatDateDivider label={formatChatDateDivider(msg.createdAt || new Date().toISOString())} />
+              )}
+              <ChatBubble
+                role={msg.role}
+                content={msg.content}
+                emotion={msg.role === 'assistant' ? (msg.commands?.emotion || emotion) : undefined}
+                isStreaming={
+                  msg.role === 'assistant' &&
+                  idx === messages.length - 1 &&
+                  isStreaming
+                }
+                imageUrl={
+                  msg.role === 'assistant'
+                    ? (imageMap[msg.id] ?? msg.commands?.image_url)
+                    : undefined
+                }
+                imagePrompt={msg.role === 'assistant' ? msg.commands?.illustration_prompt : undefined}
+                imageLoading={msg.role === 'assistant' ? !!imageLoadingMap[msg.id] : false}
+                imageError={msg.role === 'assistant' ? imageErrorMap[msg.id] : null}
+              />
+            </Fragment>
+          )
+        })}
 
         {/* 错误提示 */}
         {error && (

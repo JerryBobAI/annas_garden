@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, type Dispatch, type SetStateAction } from 'react'
 import { parseAIResponse } from '@/lib/ai/structured-output'
 import { createClient, getClientUser } from '@/lib/supabase/client'
 import { startWaitingSound, stopWaitingSound } from '@/lib/audio-waiting'
@@ -11,6 +11,8 @@ export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
+  /** ISO 时间，用于日期分割线 */
+  createdAt?: string
   /** 精灵消息才有 */
   commands?: AIStructuredOutput
 }
@@ -55,6 +57,59 @@ function buildImagePromptFromUserMessage(text: string): string {
     .replace(/^(请|帮我|给我|能不能|可以|来)/u, '')
     .replace(/(吧|呀|呢|吗|。！？!?)+$/u, '')
     .trim()
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** 流式结束后 assistant 消息入库有延迟，短轮询拿到真实 UUID */
+async function fetchLatestAssistantMessageId(
+  supabase: ReturnType<typeof createClient>,
+  conversationId: string,
+  maxAttempts = 6,
+): Promise<string | null> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const { data } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .eq('role', 'assistant')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (data?.id) return data.id
+    if (attempt < maxAttempts - 1) await sleep(350)
+  }
+  return null
+}
+
+function remapMessageId(
+  oldId: string,
+  newId: string,
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
+  setImageMap: Dispatch<SetStateAction<Record<string, string>>>,
+  setImageLoadingMap: Dispatch<SetStateAction<Record<string, boolean>>>,
+  setImageErrorMap: Dispatch<SetStateAction<Record<string, string>>>,
+) {
+  if (oldId === newId) return
+  setMessages(prev => prev.map(m => (m.id === oldId ? { ...m, id: newId } : m)))
+  setImageMap(prev => {
+    if (!prev[oldId]) return prev
+    const { [oldId]: url, ...rest } = prev
+    return { ...rest, [newId]: url }
+  })
+  setImageLoadingMap(prev => {
+    if (!prev[oldId]) return prev
+    const { [oldId]: loading, ...rest } = prev
+    return loading ? { ...rest, [newId]: true } : rest
+  })
+  setImageErrorMap(prev => {
+    if (!prev[oldId]) return prev
+    const { [oldId]: err, ...rest } = prev
+    return { ...rest, [newId]: err }
+  })
 }
 
 let msgCounter = 0
@@ -241,6 +296,7 @@ export function useFairyChat(
                 role: m.role as 'user' | 'assistant',
                 content,
                 commands,
+                createdAt: m.created_at,
               }
             })
           setMessages(restored)
@@ -294,7 +350,6 @@ export function useFairyChat(
       })
 
       try {
-        // 读取用户在设置页面选择的图片 Provider 偏好
         const imageProvider = typeof window !== 'undefined'
           ? localStorage.getItem('imageProvider') || undefined
           : undefined
@@ -311,28 +366,25 @@ export function useFairyChat(
         })
 
         const data = await res.json().catch(() => null)
+        let resolvedMsgId = msgId
         if (res.ok && data?.url) {
-          setImageMap(prev => ({ ...prev, [msgId]: data.url }))
-          // 持久化：将 image_url 写入 messages.structured_output
-          // 注意：msgId 是前端临时 ID，数据库 ID 不同，需通过 conversation 定位
-          if (convId) {
-            const supabase = createClient()
-            const { data: msgRow } = await supabase
-              .from('messages')
-              .select('id, structured_output')
-              .eq('conversation_id', convId)
-              .eq('role', 'assistant')
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single()
-            if (msgRow) {
-              const so = (msgRow.structured_output || {}) as Record<string, unknown>
-              await supabase
-                .from('messages')
-                .update({ structured_output: { ...so, image_url: data.url } })
-                .eq('id', msgRow.id)
-            }
+          resolvedMsgId = (data.message_id as string | null) || msgId
+          if (resolvedMsgId !== msgId) {
+            remapMessageId(msgId, resolvedMsgId, setMessages, setImageMap, setImageLoadingMap, setImageErrorMap)
           }
+          setImageMap(prev => ({ ...prev, [resolvedMsgId]: data.url }))
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === resolvedMsgId
+                ? {
+                    ...m,
+                    commands: m.commands
+                      ? { ...m.commands, image_url: data.url }
+                      : { emotion: 'happy' as FairyEmotion, image_url: data.url },
+                  }
+                : m,
+            ),
+          )
           return
         }
 
@@ -367,12 +419,13 @@ export function useFairyChat(
       setEmotion('thinking')
 
       // 1. 立即显示用户气泡
-      const userMsg: ChatMessage = { id: genId(), role: 'user', content: trimmed }
+      const now = new Date().toISOString()
+      const userMsg: ChatMessage = { id: genId(), role: 'user', content: trimmed, createdAt: now }
       setMessages(prev => [...prev, userMsg])
 
       // 2. 占位精灵气泡（流式填充）
       const aiMsgId = genId()
-      setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '' }])
+      setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: now }])
 
       setIsStreaming(true)
       startWaitingSound() // 精灵思考时播放轻快等待音效
@@ -459,7 +512,15 @@ export function useFairyChat(
         console.log('[Image] drawPrompt check:', { illustration_prompt: commands.illustration_prompt, userLooksLikeDraw: looksLikeDrawRequest(trimmed), drawPrompt })
         if (drawPrompt) {
           const activeConvId = newConvId || conversationId
-          void generateIllustration(drawPrompt, activeConvId, aiMsgId)
+          let imageMsgId = aiMsgId
+          if (activeConvId) {
+            const dbMsgId = await fetchLatestAssistantMessageId(supabase, activeConvId)
+            if (dbMsgId) {
+              remapMessageId(aiMsgId, dbMsgId, setMessages, setImageMap, setImageLoadingMap, setImageErrorMap)
+              imageMsgId = dbMsgId
+            }
+          }
+          void generateIllustration(drawPrompt, activeConvId, imageMsgId)
         }
 
         let creationId = commands.creation_id || null

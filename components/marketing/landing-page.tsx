@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ShareLinkButton from '@/components/shared/share-link-button'
 
 const MODES = [
   {
@@ -137,10 +138,27 @@ export function LandingPage() {
         >
           开始试用
         </Link>
+        <div className="mt-6 flex justify-center">
+          <ShareLinkButton
+            href="/"
+            title="Anna's Garden · 安娜的花园"
+            text="AI 花园精灵陪孩子探索、任务、创造 — 来看看安娜的花园"
+            label="🔗 分享给朋友"
+          />
+        </div>
       </section>
 
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-amber-200/30">
         <p>🧚 Anna&apos;s Garden — AI 原生儿童教育</p>
+        <div className="mt-3 flex justify-center">
+          <ShareLinkButton
+            href="/"
+            title="Anna's Garden · 安娜的花园"
+            text="推荐一个 AI 原生儿童学习产品：安娜的花园"
+            label="📤 分享本站（带预览图）"
+            className="inline-block"
+          />
+        </div>
         <p className="mt-2">
           <Link href="/auth/login" className="underline hover:text-foreground">
             登录

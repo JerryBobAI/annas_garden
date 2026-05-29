@@ -44,6 +44,106 @@ const modeLabels: Record<string, string> = {
   create: '🎨 创造模式',
 }
 
+function ParentPinSettings() {
+  const [hasPersonalPin, setHasPersonalPin] = useState<boolean | null>(null)
+  const [currentPin, setCurrentPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/parent/pin/status', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((d) => setHasPersonalPin(!!d.hasPersonalPin))
+      .catch(() => setHasPersonalPin(false))
+  }, [])
+
+  async function handleChangePin(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    setMessage('')
+    try {
+      const res = await fetch('/api/parent/pin/change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ currentPin, newPin, confirmPin }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || '修改失败')
+      setMessage('家长 PIN 已更新')
+      setCurrentPin('')
+      setNewPin('')
+      setConfirmPin('')
+      setHasPersonalPin(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '修改失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (hasPersonalPin === null) return null
+
+  return (
+    <div className="card rounded-soft p-6 mb-6 animate-card-enter">
+      <div className="content-z">
+        <h2 className="text-xl font-bold mb-2" style={{ color: '#3A2E2C' }}>
+          🔐 家长 PIN
+        </h2>
+        <p className="text-xs mb-4" style={{ color: '#8B7355' }}>
+          {hasPersonalPin
+            ? '修改进入家长区时使用的 4–6 位数字 PIN'
+            : '尚未设置家庭 PIN，请从孩子端进入家长区时完成首次设置'}
+        </p>
+        {hasPersonalPin ? (
+          <form onSubmit={handleChangePin} className="space-y-3 max-w-md">
+            {(['currentPin', 'newPin', 'confirmPin'] as const).map((field, i) => (
+              <input
+                key={field}
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                autoComplete="off"
+                value={field === 'currentPin' ? currentPin : field === 'newPin' ? newPin : confirmPin}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '')
+                  if (field === 'currentPin') setCurrentPin(v)
+                  else if (field === 'newPin') setNewPin(v)
+                  else setConfirmPin(v)
+                }}
+                placeholder={['当前 PIN', '新 PIN', '确认新 PIN'][i]}
+                className="w-full px-4 py-3 rounded-xl bg-white/60 border border-amber-200/50 focus:outline-none focus:border-amber-400 text-center tracking-widest"
+                style={{ color: '#3A2E2C' }}
+              />
+            ))}
+            {error && (
+              <p className="text-sm" style={{ color: '#b45309' }}>{error}</p>
+            )}
+            {message && (
+              <p className="text-sm" style={{ color: '#16a34a' }}>{message}</p>
+            )}
+            <button
+              type="submit"
+              disabled={saving || currentPin.length < 4 || newPin.length < 4}
+              className="btn-primary px-6 py-2.5 text-white font-semibold rounded-xl disabled:opacity-50"
+            >
+              {saving ? '保存中...' : '更新 PIN'}
+            </button>
+          </form>
+        ) : (
+          <p className="text-sm" style={{ color: '#8B7355' }}>
+            路径：孩子花园 → 家长入口 → 设置家庭 PIN
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -199,6 +299,9 @@ export default function SettingsPage() {
     <main className="min-h-screen watercolor-bg">
       <div className="container mx-auto px-4 py-8">
         {navHeader}
+
+        {/* 家长 PIN */}
+        <ParentPinSettings />
 
         {/* Phase 4: 认知档案 */}
         {cognitive ? (
